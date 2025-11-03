@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>答题考试系统</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script defer src="assets/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo">考</div>
+        <div class="brand__text">
+          <p class="brand__title">答题考试系统</p>
+          <p class="brand__subtitle">Exam Practice Suite</p>
+        </div>
+      </div>
+      <div class="session-summary">
+        <h2>本次训练</h2>
+        <div class="summary-grid">
+          <div>
+            <span class="summary-label">题目总数</span>
+            <span id="summary-total" class="summary-value">12</span>
+          </div>
+          <div>
+            <span class="summary-label">已完成</span>
+            <span id="summary-progress" class="summary-value">4</span>
+          </div>
+          <div>
+            <span class="summary-label">正确率</span>
+            <span id="summary-accuracy" class="summary-value">75%</span>
+          </div>
+        </div>
+        <div class="summary-tags">
+          <span class="tag tag--primary">顺序出题</span>
+          <span class="tag">单选</span>
+          <span class="tag">多选</span>
+          <span class="tag tag--muted">AI 题目 x3</span>
+        </div>
+      </div>
+      <div class="wrong-bank">
+        <h2>错题复练</h2>
+        <ul id="wrong-list" class="wrong-list">
+          <li class="wrong-item active">
+            <span>称重装置 · 超载报警</span>
+            <button class="btn-link">重练</button>
+          </li>
+          <li class="wrong-item">
+            <span>限速器 · 铅封检查</span>
+            <button class="btn-link">重练</button>
+          </li>
+        </ul>
+      </div>
+      <div class="session-controls">
+        <button class="btn btn--secondary">导出答题记录</button>
+        <button class="btn btn--ghost" id="btn-open-settings" type="button">设置</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <h1 id="question-component">称重装置 · 单选题</h1>
+          <p class="topbar__subtitle">聚焦称重装置的超载报警要求，确保现场操作准确。</p>
+        </div>
+        <div class="topbar__progress">
+          <span>第 <strong id="question-index">5</strong> / <span id="question-total">12</span> 题</span>
+          <div class="progress">
+            <div class="progress__bar" style="width: 45%"></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="question-card">
+        <div class="question-card__header">
+          <span class="chip chip--single">单选</span>
+          <span class="chip chip--knowledge">称重装置</span>
+          <span class="chip chip--level">难度 · 中等</span>
+        </div>
+        <h2 id="question-text" class="question-card__title">
+          关于称重装置，以下哪项描述是正确的？
+        </h2>
+        <div class="options" role="group">
+          <button class="option" data-option="A">
+            <span class="option__key">A</span>
+            <span class="option__text">耗能型缓冲器适用于任何额定速度的电梯。</span>
+          </button>
+          <button class="option" data-option="B">
+            <span class="option__key">B</span>
+            <span class="option__text">当电梯超载（110%额定载荷）时，应发出声光警报并保持开门。</span>
+          </button>
+          <button class="option option--disabled" data-option="C" disabled>
+            <span class="option__key">C</span>
+            <span class="option__text">限速器运转时若出现磨擦，应立即上油。</span>
+          </button>
+          <button class="option" data-option="D">
+            <span class="option__key">D</span>
+            <span class="option__text">张紧装置的绳槽磨损时无需调整。</span>
+          </button>
+        </div>
+        <div class="question-card__actions">
+          <button class="btn btn--ghost btn--sm" id="btn-skip">跳过</button>
+          <button class="btn btn--primary btn--sm" id="btn-submit">提交答案</button>
+        </div>
+      </section>
+
+      <section class="feedback" id="feedback">
+        <div class="feedback__status feedback__status--incorrect">
+          <span class="icon">⚠️</span>
+          <div>
+            <p class="feedback__title">回答不正确</p>
+            <p class="feedback__subtitle">正确答案：<strong>B</strong> · 超载触发声光报警，门保持开启。</p>
+          </div>
+          <button class="btn-link" id="btn-show-explain">查看解析</button>
+        </div>
+        <div class="feedback__body" id="feedback-details">
+          <article>
+            <h3>大白话解析</h3>
+            <p>
+              当轿厢装满超过额定载荷 110% 时，系统必须马上发出明显的声音和灯光提醒，并强制电梯门保持打开状态，防止继续运行。这样操作人员就会意识到超载问题，保障乘客安全。
+            </p>
+          </article>
+          <article class="feedback__keywords">
+            <h3>记忆要点</h3>
+            <ul>
+              <li>110% 触发声光报警</li>
+              <li>门保持全开</li>
+              <li>禁止继续运行</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="session-footer">
+        <div class="footer-stats">
+          <span>耗时：<strong id="timer">03:21</strong></span>
+          <span>AI 辅助：<strong>未启用</strong></span>
+        </div>
+        <div class="footer-actions">
+          <button class="btn btn--ghost">上一题</button>
+          <button class="btn btn--primary">下一题</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="settings-modal" aria-hidden="true">
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <header class="modal__header">
+        <div>
+          <h2 id="settings-title">AI 配置</h2>
+          <p class="modal__subtitle">配置请求地址、密钥和模型，保存前可测试连通性。</p>
+        </div>
+        <button class="icon-btn icon-btn--ghost" id="btn-close-settings" aria-label="关闭设置">✕</button>
+      </header>
+      <form class="modal__form" id="settings-form">
+        <label class="field">
+          <span class="field__label">请求 URL</span>
+          <input type="url" id="ai-url" name="url" placeholder="例如：https://api.openai.com/v1" required />
+        </label>
+        <label class="field">
+          <span class="field__label">API Key</span>
+          <input type="password" id="ai-key" name="key" placeholder="sk-..." required />
+        </label>
+        <label class="field">
+          <span class="field__label">模型名称</span>
+          <input type="text" id="ai-model" name="model" placeholder="例如：gpt-4o-mini" required />
+        </label>
+        <label class="field">
+          <span class="field__label">超时时间（秒，可选）</span>
+          <input type="number" id="ai-timeout" name="timeout" min="1" max="120" placeholder="10" />
+        </label>
+        <label class="field">
+          <span class="field__label">开发者文档链接（可选）</span>
+          <input type="url" id="ai-devdoc" name="dev_document" placeholder="https://..." />
+        </label>
+      </form>
+      <div class="modal__status" id="settings-status" role="status" aria-live="polite"></div>
+      <footer class="modal__footer">
+        <div class="modal__footer-left">
+        <button class="btn btn--ghost btn--sm" id="btn-delete-config" type="button">删除配置</button>
+        </div>
+        <div class="modal__footer-right">
+          <button class="btn btn--ghost btn--sm" id="btn-test-config" type="button">测试连通性</button>
+          <button class="btn btn--primary btn--sm" id="btn-save-config" type="button">保存</button>
+          <button class="btn btn--ghost btn--sm" id="btn-cancel-config" type="button">取消</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

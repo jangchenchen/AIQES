@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+*.DS_Store
+data/answer_history*.jsonl
+data/wrong_questions*.json

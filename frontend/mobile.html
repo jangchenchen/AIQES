@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>答题考试系统 · 移动端样板</title>
+  <link rel="stylesheet" href="assets/mobile.css" />
+  <script defer src="assets/mobile.js"></script>
+</head>
+<body>
+  <div class="phone-frame">
+    <header class="app-header">
+      <div class="app-header__title">
+        <span class="logo-circle">考</span>
+        <div>
+          <p class="app-name">答题考试系统</p>
+          <p class="app-tagline">移动练习模式</p>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-mobile-menu" aria-label="打开菜单" type="button">☰</button>
+    </header>
+
+    <section class="progress-card">
+      <div class="progress-card__row">
+        <span>题目进度</span>
+        <span id="progress-count">5 / 12</span>
+      </div>
+      <div class="progress-line">
+        <div class="progress-line__bar" style="width: 42%"></div>
+      </div>
+      <ul class="status-pills">
+        <li class="pill pill--active">单选</li>
+        <li class="pill">多选</li>
+        <li class="pill pill--muted">AI 复练</li>
+      </ul>
+    </section>
+
+    <main class="question-view">
+      <div class="question-meta">
+        <span class="question-meta__tag">称重装置</span>
+        <span class="question-meta__level">难度 · 中等</span>
+      </div>
+      <h1 id="question-body" class="question-title">关于称重装置，以下哪项描述是正确的？</h1>
+      <div class="option-list">
+        <button class="option-card" data-option="A">
+          <span class="option-card__key">A</span>
+          <span class="option-card__text">限速器运转时应保持润滑，出现摩擦及时添加润滑脂。</span>
+        </button>
+        <button class="option-card option-card--correct" data-option="B">
+          <span class="option-card__key">B</span>
+          <span class="option-card__text">超载（110%）时需触发声光报警并保持轿门开启，禁止继续运行。</span>
+        </button>
+        <button class="option-card" data-option="C">
+          <span class="option-card__key">C</span>
+          <span class="option-card__text">张紧轮磨损后可以在检修时统一处理。</span>
+        </button>
+        <button class="option-card" data-option="D">
+          <span class="option-card__key">D</span>
+          <span class="option-card__text">称重装置可允许超载15% 再报警。</span>
+        </button>
+      </div>
+    </main>
+
+    <section class="feedback-panel" id="feedback-panel">
+      <div class="feedback-panel__status feedback-panel__status--error">
+        <span class="status-icon">⚠️</span>
+        <div>
+          <p class="status-title">回答不正确</p>
+          <p class="status-sub">正确答案：<strong>B</strong> · 110% 超载立即报警</p>
+        </div>
+        <button class="text-link" id="toggle-explain">解析</button>
+      </div>
+      <div class="feedback-panel__body" id="mobile-explain">
+        <p class="explain-text">
+          当轿厢超载到 110% 时，系统必须马上发出明显的声音和灯光提醒，同时让电梯门保持打开，阻止继续运行，以提醒现场人员及时卸载。
+        </p>
+        <div class="keyword-grid">
+          <span class="keyword">110% 限值</span>
+          <span class="keyword">声光报警</span>
+          <span class="keyword">门保持开启</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="action-bar">
+      <button class="action-btn action-btn--ghost">上一题</button>
+      <button class="action-btn action-btn--primary">提交答案</button>
+    </footer>
+  </div>
+
+  <div class="mobile-sheet" id="mobile-sheet" aria-hidden="true">
+    <div class="mobile-sheet__header">
+      <div>
+        <p class="mobile-sheet__title">AI 配置</p>
+        <p class="mobile-sheet__subtitle">输入请求 URL、Key、模型。保存前可模拟测试。</p>
+      </div>
+      <button class="icon-btn icon-btn--ghost" id="btn-close-sheet" aria-label="关闭配置" type="button">✕</button>
+    </div>
+    <form class="mobile-sheet__form" id="mobile-settings-form">
+      <label class="mobile-field">
+        <span class="mobile-field__label">请求 URL</span>
+        <input type="url" name="url" placeholder="https://api.openai.com/v1" required />
+      </label>
+      <label class="mobile-field">
+        <span class="mobile-field__label">API Key</span>
+        <input type="password" name="key" placeholder="sk-..." required />
+      </label>
+      <label class="mobile-field">
+        <span class="mobile-field__label">模型</span>
+        <input type="text" name="model" placeholder="gpt-4o-mini" required />
+      </label>
+    </form>
+    <div class="mobile-sheet__status" id="mobile-settings-status"></div>
+    <div class="mobile-sheet__actions">
+      <button class="sheet-btn sheet-btn--ghost" id="btn-mobile-delete" type="button">删除</button>
+      <div class="sheet-btn-group">
+        <button class="sheet-btn sheet-btn--ghost" id="btn-mobile-test" type="button">测试连通性</button>
+        <button class="sheet-btn sheet-btn--primary" id="btn-mobile-save" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
