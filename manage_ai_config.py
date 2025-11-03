@@ -11,6 +11,7 @@ from typing import Optional
 
 CONFIG_PATH = Path("AI_cf/cf.json")
 DEFAULT_TIMEOUT = 10
+_CHAT_COMPLETIONS_SUFFIX = "/v1/chat/completions"
 
 
 @dataclass
@@ -47,12 +48,21 @@ def load_config(path: Path = CONFIG_PATH) -> Optional[AIConfig]:
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
-    return AIConfig.from_payload(payload)
+    config = AIConfig.from_payload(payload)
+    config.url = normalize_url(config.url)
+    return config
 
 
 def save_config(config: AIConfig, path: Path = CONFIG_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(config.to_payload(), ensure_ascii=False, indent=2), encoding="utf-8")
+    working = AIConfig(
+        key=config.key,
+        url=normalize_url(config.url),
+        model=config.model,
+        dev_document=config.dev_document,
+        timeout=config.timeout,
+    )
+    path.write_text(json.dumps(working.to_payload(), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def delete_config(path: Path = CONFIG_PATH) -> bool:
@@ -63,15 +73,23 @@ def delete_config(path: Path = CONFIG_PATH) -> bool:
 
 
 def test_connectivity(config: AIConfig, endpoint: Optional[str] = None) -> tuple[bool, str]:
-    target = endpoint or config.url
-    request = urllib.request.Request(target, method="GET")
+    target = normalize_url(endpoint or config.url)
+    payload = {
+        "model": config.model,
+        "messages": [{"role": "user", "content": "ping"}],
+        "max_tokens": 1,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(target, data=data, method="POST")
     request.add_header("Authorization", f"Bearer {config.key}")
+    request.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(request, timeout=config.timeout) as response:
             status = getattr(response, "status", None) or response.getcode()
             return True, f"连通性测试成功，HTTP 状态 {status}。"
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
+        # 对于部分服务，401/403 表示鉴权失败但路径可达，仍提示为失败以便用户检查 Key
         return False, f"HTTP {exc.code}: {detail or exc.reason}"
     except urllib.error.URLError as exc:
         return False, f"无法连接：{exc.reason}"
@@ -117,7 +135,13 @@ def run_wizard(args: argparse.Namespace) -> int:
     except ValueError:
         timeout = DEFAULT_TIMEOUT
 
-    config = AIConfig(key=key, url=url, model=model, dev_document=dev_doc or None, timeout=timeout)
+    config = AIConfig(
+        key=key,
+        url=normalize_url(url),
+        model=model,
+        dev_document=dev_doc or None,
+        timeout=timeout,
+    )
 
     print("\n配置预览：")
     print(json.dumps(config.to_payload(), ensure_ascii=False, indent=2))
@@ -169,7 +193,13 @@ def run_set(args: argparse.Namespace) -> int:
     if not all([key, url, model]):
         print("--url、--key、--model 必须全部提供。")
         return 1
-    config = AIConfig(key=key, url=url, model=model, dev_document=args.dev_document, timeout=args.timeout)
+    config = AIConfig(
+        key=key,
+        url=normalize_url(url),
+        model=model,
+        dev_document=args.dev_document,
+        timeout=args.timeout,
+    )
     save_config(config)
     print(f"配置已保存至 {CONFIG_PATH}")
     if args.test:
@@ -206,6 +236,19 @@ def build_parser() -> argparse.ArgumentParser:
     set_cmd.set_defaults(func=run_set)
 
     return parser
+
+
+def normalize_url(url: str) -> str:
+    if not url:
+        return url
+    trimmed = url.strip()
+    if not trimmed:
+        return trimmed
+    # remove trailing slash to avoid double slashes
+    trimmed = trimmed.rstrip("/")
+    if not trimmed.endswith(_CHAT_COMPLETIONS_SUFFIX):
+        trimmed = f"{trimmed}{_CHAT_COMPLETIONS_SUFFIX}"
+    return trimmed
 
 
 def main(argv: list[str] | None = None) -> int:

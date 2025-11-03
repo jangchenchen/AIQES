@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 配置中心</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <header class="panel__header">
+          <div>
+            <h1>答题考试系统 · AI 配置</h1>
+            <p>录入请求地址、密钥、模型，并测试连通性后保存。</p>
+          </div>
+          <button id="btn-load" class="btn btn--ghost" type="button">读取当前配置</button>
+        </header>
+
+        <form id="config-form" class="form">
+          <label class="field">
+            <span class="field__label">请求 URL</span>
+            <input type="url" id="field-url" name="url" placeholder="https://api.openai.com/v1" required />
+          </label>
+          <label class="field">
+            <span class="field__label">API Key</span>
+            <input type="password" id="field-key" name="key" placeholder="sk-..." required />
+          </label>
+          <label class="field">
+            <span class="field__label">模型名称</span>
+            <input type="text" id="field-model" name="model" placeholder="例如：gpt-4o-mini" required />
+          </label>
+          <label class="field">
+            <span class="field__label">超时时间（秒，可选）</span>
+            <input type="number" id="field-timeout" name="timeout" min="1" max="120" placeholder="10" />
+          </label>
+          <label class="field">
+            <span class="field__label">开发文档链接（可选）</span>
+            <input type="url" id="field-devdoc" name="dev_document" placeholder="https://..." />
+          </label>
+        </form>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+
+        <footer class="actions">
+          <div class="actions__left">
+            <button id="btn-delete" class="btn btn--ghost" type="button">删除配置</button>
+          </div>
+          <div class="actions__right">
+            <button id="btn-test" class="btn btn--ghost" type="button">测试连通性</button>
+            <button id="btn-save" class="btn btn--primary" type="button">保存配置</button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="tips">
+        <h2>使用说明</h2>
+        <ol>
+          <li>运行后端：<code>uvicorn server.app:app --reload</code></li>
+          <li>表单提交前请确保 URL/Key/模型填写完整。</li>
+          <li>测试连通性会直接调用服务器端口，出现失败时请根据提示排查。</li>
+          <li>保存配置后，CLI 与问答脚本将共用同一配置文件。</li>
+        </ol>
+        <details>
+          <summary>接口端点</summary>
+          <ul>
+            <li><code>GET /api/ai-config</code>：获取当前配置</li>
+            <li><code>PUT /api/ai-config</code>：保存配置</li>
+            <li><code>POST /api/ai-config/test</code>：测试连通性</li>
+            <li><code>DELETE /api/ai-config</code>：删除配置</li>
+          </ul>
+        </details>
+      </aside>
+    </main>
+  </body>
+</html>

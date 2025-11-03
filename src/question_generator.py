@@ -156,6 +156,46 @@ class QuestionGenerator:
         questions.extend(self.build_open_ended())
         return questions
 
+    def generate_questions(
+        self,
+        *,
+        types: Sequence[str] | None = None,
+        type_filters: Sequence[str] | None = None,
+        count: int | None = None,
+        mode: str = "sequential",
+        seed: int | None = None,
+    ) -> List[Question]:
+        """High level helper used by API layer to request question subsets."""
+
+        builder_map = {
+            "single": self.build_single_choice,
+            "multi": self.build_multi_choice,
+            "cloze": self.build_cloze,
+            "qa": self.build_open_ended,
+        }
+
+        if types and type_filters and set(types) != set(type_filters):
+            raise ValueError("types 与 type_filters 参数冲突，请仅提供其中一个")
+        selected = types or type_filters
+        selected_types = list(selected) if selected else list(builder_map.keys())
+        questions: List[Question] = []
+        for raw_type in selected_types:
+            key = _normalize_type_key(raw_type)
+            builder = builder_map.get(key)
+            if not builder:
+                raise ValueError(f"不支持的题型: {raw_type}")
+            questions.extend(builder())
+
+        if mode == "random":
+            rng = random.Random(seed)
+            rng.shuffle(questions)
+        elif mode != "sequential":
+            raise ValueError(f"未知的出题模式: {mode}")
+
+        if count is not None and count >= 0:
+            questions = questions[:count] if count else questions
+        return questions
+
 
 def _make_cloze(sentence: str, component: str) -> tuple[str | None, str | None]:
     sentence = sentence.strip()
@@ -194,6 +234,31 @@ def _extract_keywords(entry: KnowledgeEntry) -> List[str]:
     if entry.component not in keywords:
         keywords.insert(0, entry.component)
     return keywords
+
+
+def _normalize_type_key(value: str | QuestionType) -> str:
+    if isinstance(value, QuestionType):
+        return {
+            QuestionType.SINGLE_CHOICE: "single",
+            QuestionType.MULTI_CHOICE: "multi",
+            QuestionType.CLOZE: "cloze",
+            QuestionType.QA: "qa",
+        }[value]
+    normalized = str(value).strip().lower()
+    mapping = {
+        "single_choice": "single",
+        "single-choice": "single",
+        "single": "single",
+        "multi_choice": "multi",
+        "multi-choice": "multi",
+        "multiple": "multi",
+        "multi": "multi",
+        "cloze": "cloze",
+        "qa": "qa",
+        "open": "qa",
+        "open_ended": "qa",
+    }
+    return mapping.get(normalized, normalized)
 
 
 __all__ = ["QuestionGenerator"]

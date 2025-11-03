@@ -25,6 +25,7 @@ python main.py --enable-ai --ai-questions 3  # 向大模型请求 3 道新增题
 python main.py --review-wrong            # 练习历史错题
 python main.py --knowledge-file data/sample.md  # 使用自定义知识文件练习
 python manage_ai_config.py wizard        # 交互式配置/测试 AI 接口
+uvicorn server.app:app --reload          # 启动 AI 配置 API 服务
 ```
 
 - 单选题输入 `A`、`B` 等字母。
@@ -45,6 +46,8 @@ python manage_ai_config.py wizard        # 交互式配置/测试 AI 接口
 ### AI 配置工具
 - CLI：`manage_ai_config.py` 支持 `wizard`、`set`、`show`、`test`、`delete` 等子命令，可保存配置并测试连通性（若当前环境无外网则会提示失败原因）。
 - 前端样板：桌面端弹窗、移动端底部抽屉均提供 URL、Key、模型输入与“测试/保存/删除”按钮，便于后续接入真实服务。
+- API 服务：运行 `uvicorn server.app:app --reload` 启动 FastAPI 接口，前端页面 `web/ai-config/index.html` 通过 `/api/ai-config` 系列端点读取/保存配置、模拟连通性测试。
+- URL 将自动补全为 `/v1/chat/completions`，无需手动填写完整路径。
 
 ## AI 扩展说明
 - `src/ai_client.py` 实现了基于 HTTP 的通用调用逻辑：读取 `AI_cf/cf.json`，使用 Bearer Token 将请求 POST 到配置的 `url`。
@@ -68,7 +71,8 @@ python manage_ai_config.py wizard        # 交互式配置/测试 AI 接口
 │   ├── question_generator.py # 各类题型生成逻辑
 │   ├── ai_client.py          # AI 问题生成与配置加载
 │   └── record_manager.py     # 作答日志与错题管理
-└── main.py                   # 命令行交互入口
+├── server/app.py             # FastAPI 服务，承载 AI 配置 REST 接口
+└── web/ai-config/            # AI 配置前端页面（HTML/CSS/JS）
 ```
 
 ## 后续可拓展点

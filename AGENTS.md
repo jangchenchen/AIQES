@@ -6,6 +6,8 @@
 - `docs/Knowledge/` 存放 Markdown 知识源，保留表格结构以便解析。
 - `data/` 会自动生成，包含 `answer_history.jsonl`（JSON Lines 的答题记录）与 `wrong_questions.json`（错题题面与解析缓存）。
 - `AI_cf/cf.json` 为大模型配置文件（Bearer token、endpoint、model、timeout）。
+- `server/app.py` 提供 FastAPI 接口（GET/PUT/POST/DELETE `/api/ai-config`），前端通过该接口读写配置并测试连通性。
+- `web/ai-config/` 包含独立的 AI 配置页面（HTML/CSS/JS），保存或测试时自动补全 `/v1/chat/completions` 后缀。
 - 临时测试脚本统一放在仓库根目录，命名为 `test_*.py` 方便批量运行。
 
 ## Build, Test, and Development Commands
