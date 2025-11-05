@@ -3,6 +3,7 @@
 
 import json
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,7 +21,7 @@ from src.ai_client import AIClient, AIResponseFormatError, AITransportError
 from src.knowledge_loader import MAX_KNOWLEDGE_FILE_SIZE, load_knowledge_entries
 from src.question_generator import QuestionGenerator
 from src.question_models import Question, QuestionType
-from src.record_manager import RecordManager
+from src.record_manager import RecordManager, _dict_to_question as dict_to_question
 
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
@@ -29,6 +30,55 @@ CORS(app)
 sessions: Dict[str, Dict[str, Any]] = {}
 UPLOAD_FOLDER = Path("uploads")
 UPLOAD_FOLDER.mkdir(exist_ok=True)
+SESSIONS_FILE = Path("data/sessions.json")
+SESSIONS_FILE.parent.mkdir(exist_ok=True)
+
+# 初始化 RecordManager
+record_manager = RecordManager()
+
+
+# Session持久化函数
+def load_sessions():
+    """从文件加载sessions"""
+    global sessions
+    if SESSIONS_FILE.exists():
+        try:
+            with open(SESSIONS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # 反序列化Question对象
+                for session_id, session in data.items():
+                    if 'questions' in session:
+                        session['questions'] = [
+                            dict_to_question(q) for q in session['questions']
+                        ]
+                sessions = data
+                print(f"✅ 加载了 {len(sessions)} 个会话")
+        except Exception as e:
+            print(f"⚠️  加载会话失败: {e}")
+            sessions = {}
+
+
+def save_sessions():
+    """保存sessions到文件"""
+    try:
+        # 序列化Question对象
+        data = {}
+        for session_id, session in sessions.items():
+            session_copy = session.copy()
+            if 'questions' in session_copy:
+                session_copy['questions'] = [
+                    question_to_dict(q) for q in session_copy['questions']
+                ]
+            data[session_id] = session_copy
+
+        with open(SESSIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"⚠️  保存会话失败: {e}")
+
+
+# 启动时加载sessions
+load_sessions()
 
 _TYPE_ALIAS: Dict[str, QuestionType] = {
     "single": QuestionType.SINGLE_CHOICE,
@@ -50,6 +100,36 @@ def question_to_dict(q: Question) -> Dict[str, Any]:
         "explanation": q.explanation,
         "keywords": q.keywords,
     }
+
+
+def _parse_bool(value: Optional[str]) -> Optional[bool]:
+    if value is None:
+        return None
+    lowered = value.strip().lower()
+    if lowered in {"true", "1", "yes"}:
+        return True
+    if lowered in {"false", "0", "no"}:
+        return False
+    return None
+
+
+def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    else:
+        parsed = parsed.astimezone(timezone.utc)
+    return parsed
 
 
 @app.route('/')
@@ -125,7 +205,7 @@ def generate_questions():
         filepath = data.get('filepath')
         question_types = data.get('types', ['single', 'multi', 'cloze', 'qa'])
         count = data.get('count', 10)
-        ai_count = data.get('ai_count', 0)
+        use_ai = data.get('use_ai', False)  # 新参数：是否使用AI增强
         mode = data.get('mode', 'sequential')
         seed = data.get('seed')
 
@@ -146,28 +226,37 @@ def generate_questions():
         if not type_filters:
             type_filters = list(_TYPE_ALIAS.values())
 
-        # 生成题目
-        generator = QuestionGenerator(entries)
-        questions = generator.generate_questions(type_filters=type_filters)
+        questions = []
+        ai_used = False
 
-        # AI 生成额外题目
-        if ai_count > 0:
-            ai_config = load_ai_config()
-            if ai_config:
-                try:
-                    ai_client = AIClient(ai_config)
-                    ai_questions = ai_client.generate_additional_questions(
-                        entries,
-                        count=ai_count,
-                        question_types=type_filters,
-                    )
-                    questions.extend(ai_questions)
-                except (AITransportError, AIResponseFormatError) as e:
-                    # AI 失败不影响主流程
-                    pass
+        # 优先使用AI生成所有题目
+        ai_config = load_ai_config()
+        if ai_config:
+            try:
+                ai_client = AIClient(ai_config)
+                questions = ai_client.generate_additional_questions(
+                    entries,
+                    count=count,
+                    question_types=type_filters,
+                )
+                ai_used = True
+                print(f"✅ AI生成成功：生成 {len(questions)} 道题目")
+            except (AITransportError, AIResponseFormatError) as e:
+                print(f"⚠️  AI生成失败：{str(e)}，降级使用本地生成")
+                ai_used = False
+
+        # 如果AI未配置或失败，降级使用本地生成
+        if not questions:
+            print("📝 使用本地算法生成题目")
+            generator = QuestionGenerator(entries)
+            questions = generator.generate_questions(type_filters=type_filters)
+
+            # 限制数量
+            if count and count < len(questions):
+                questions = questions[:count]
 
         if not questions:
-            return jsonify({"error": "题库为空，无法生成题目"}), 400
+            return jsonify({"error": "题库为空，无法生成题目。请检查知识文件内容或配置AI。"}), 400
 
         # 创建会话
         session_id = str(uuid.uuid4())
@@ -191,6 +280,7 @@ def generate_questions():
             "total_count": len(questions),
             "filepath": filepath,
         }
+        save_sessions()  # 持久化到文件
 
         return jsonify({
             "success": True,
@@ -273,6 +363,7 @@ def submit_answer():
 
         # 移动到下一题
         session['current_index'] += 1
+        save_sessions()  # 持久化到文件
 
         # 记录到数据库（如果需要）
         record_manager = RecordManager()
@@ -333,6 +424,232 @@ def session_status():
 
     except Exception as e:
         return jsonify({"error": f"获取状态失败：{str(e)}"}), 500
+
+
+# ============ Answer History API Routes ============
+
+
+@app.route('/api/answer-history', methods=['GET'])
+def api_answer_history():
+    """分页返回历史作答记录"""
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+        page_size = int(request.args.get('page_size', 20))
+        page_size = max(1, min(page_size, 200))
+
+        session_id = request.args.get('session_id') or None
+        question_type_param = request.args.get('question_type')
+        question_type = None
+        if question_type_param:
+            try:
+                question_type = QuestionType[question_type_param]
+            except KeyError:
+                return jsonify({"error": f"无效的题型: {question_type_param}"}), 400
+
+        is_correct_raw = request.args.get('is_correct')
+        is_correct = _parse_bool(is_correct_raw)
+        if is_correct_raw is not None and is_correct is None:
+            return jsonify({"error": "is_correct 参数必须为 true/false"}), 400
+
+        date_from_raw = request.args.get('date_from')
+        date_to_raw = request.args.get('date_to')
+        date_from = _parse_datetime(date_from_raw)
+        date_to = _parse_datetime(date_to_raw)
+        if date_from_raw and date_from is None:
+            return jsonify({"error": "date_from 不是有效的 ISO 8601 时间"}), 400
+        if date_to_raw and date_to is None:
+            return jsonify({"error": "date_to 不是有效的 ISO 8601 时间"}), 400
+
+        result = record_manager.query_answer_history(
+            page=page,
+            page_size=page_size,
+            session_id=session_id,
+            question_type=question_type,
+            is_correct=is_correct,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        return jsonify({"success": True, "data": result})
+    except ValueError as exc:
+        return jsonify({"error": f"参数错误：{exc}"}), 400
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"获取历史失败：{str(exc)}"}), 500
+
+
+@app.route('/api/answer-history/sessions', methods=['GET'])
+def api_answer_history_sessions():
+    """获取最近若干作答会话的摘要"""
+    try:
+        limit = int(request.args.get('limit', 20))
+        limit = max(1, min(limit, 100))
+        summaries = record_manager.list_answer_history_sessions(limit=limit)
+        return jsonify({"success": True, "data": summaries})
+    except ValueError as exc:
+        return jsonify({"error": f"参数错误：{exc}"}), 400
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"获取会话失败：{str(exc)}"}), 500
+
+
+# ============ Wrong Questions API Routes ============
+
+@app.route('/api/wrong-questions', methods=['GET'])
+def get_wrong_questions():
+    """获取错题列表"""
+    try:
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 20))
+        question_type_str = request.args.get('question_type')
+        sort_by = request.args.get('sort_by', 'last_wrong_at')
+        order = request.args.get('order', 'desc')
+
+        question_type = None
+        if question_type_str:
+            try:
+                question_type = QuestionType[question_type_str]
+            except KeyError:
+                return jsonify({"error": f"无效的题型: {question_type_str}"}), 400
+
+        result = record_manager.get_wrong_questions_paginated(
+            page=page,
+            page_size=page_size,
+            question_type=question_type,
+            sort_by=sort_by,
+            order=order,
+        )
+
+        return jsonify({
+            "success": True,
+            "data": result
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"获取错题失败：{str(e)}"}), 500
+
+
+@app.route('/api/wrong-questions/stats', methods=['GET'])
+def get_wrong_questions_stats():
+    """获取错题统计"""
+    try:
+        stats = record_manager.get_wrong_question_stats()
+        return jsonify({
+            "success": True,
+            "data": stats
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"获取统计失败：{str(e)}"}), 500
+
+
+@app.route('/api/wrong-questions/practice', methods=['POST'])
+def start_wrong_question_practice():
+    """创建错题复练会话"""
+    try:
+        data = request.json or {}
+        question_types = data.get('question_types', [])
+        count = data.get('count')
+        mode = data.get('mode', 'random')
+
+        # 加载错题
+        wrong_questions = record_manager.load_wrong_questions()
+
+        if not wrong_questions:
+            return jsonify({"error": "当前没有错题"}), 400
+
+        # 筛选题型
+        if question_types:
+            type_filters = [QuestionType[t] for t in question_types if t in QuestionType.__members__]
+            wrong_questions = [q for q in wrong_questions if q.question_type in type_filters]
+
+        if not wrong_questions:
+            return jsonify({"error": "没有符合条件的错题"}), 400
+
+        # 随机/顺序
+        if mode == 'random':
+            import random
+            random.shuffle(wrong_questions)
+
+        # 限制数量
+        if count and count < len(wrong_questions):
+            wrong_questions = wrong_questions[:count]
+
+        # 创建会话
+        session_id = str(uuid.uuid4())
+        sessions[session_id] = {
+            "questions": wrong_questions,
+            "current_index": 0,
+            "answers": [],
+            "correct_count": 0,
+            "total_count": len(wrong_questions),
+            "mode": "wrong_question_practice",  # 标识为错题练习
+        }
+        save_sessions()  # 持久化到文件
+
+        return jsonify({
+            "success": True,
+            "session_id": session_id,
+            "total_count": len(wrong_questions),
+            "question_types": list(set(q.question_type.name for q in wrong_questions)),
+            "mode": "wrong_question_practice"
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"创建练习失败：{str(e)}"}), 500
+
+
+@app.route('/api/wrong-questions/<identifier>', methods=['GET'])
+def get_wrong_question_detail(identifier: str):
+    """获取单个错题详情"""
+    try:
+        detail = record_manager.get_wrong_question_detail(identifier)
+        if not detail:
+            return jsonify({"error": "题目不存在"}), 404
+
+        return jsonify({
+            "success": True,
+            "data": detail
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"获取详情失败：{str(e)}"}), 500
+
+
+@app.route('/api/wrong-questions/<identifier>', methods=['DELETE'])
+def delete_wrong_question(identifier: str):
+    """删除单个错题"""
+    try:
+        record_manager.remove_wrong_question(identifier)
+        return jsonify({
+            "success": True,
+            "message": "错题已删除"
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"删除失败：{str(e)}"}), 500
+
+
+@app.route('/api/wrong-questions', methods=['DELETE'])
+def clear_wrong_questions():
+    """清空错题本"""
+    try:
+        count = record_manager.clear_all_wrong_questions()
+        return jsonify({
+            "success": True,
+            "message": "已清空错题本",
+            "deleted_count": count
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"清空失败：{str(e)}"}), 500
 
 
 # ============ AI Configuration API Routes ============
@@ -444,6 +761,93 @@ def delete_ai_config():
         return jsonify({"error": f"删除配置失败：{str(e)}"}), 500
 
 
+@app.route('/api/reset-data', methods=['POST'])
+def reset_data():
+    """清空所有数据（保留AI配置）"""
+    try:
+        # 清空会话
+        global sessions
+        sessions = {}
+        if SESSIONS_FILE.exists():
+            SESSIONS_FILE.unlink()
+
+        # 清空答题历史
+        history_file = Path("data/answer_history.jsonl")
+        if history_file.exists():
+            history_file.unlink()
+
+        # 清空错题本
+        wrong_file = Path("data/wrong_questions.json")
+        if wrong_file.exists():
+            wrong_file.write_text("[]", encoding="utf-8")
+
+        # 清空上传的知识文件
+        uploads_dir = Path("uploads")
+        if uploads_dir.exists():
+            for file in uploads_dir.glob("*"):
+                if file.is_file():
+                    file.unlink()
+
+        print("✅ 数据已重置（保留AI配置）")
+        return jsonify({
+            "success": True,
+            "message": "所有数据已清空（AI配置已保留）"
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"重置失败：{str(e)}"}), 500
+
+
+def _try_ai_grading(question: Question, user_answer: str, question_type_name: str) -> Optional[tuple[bool, str]]:
+    """
+    尝试使用AI进行语义评分
+
+    返回：
+    - (is_correct, explanation) 如果AI评分成功
+    - None 如果AI未启用或评分失败（降级到关键词匹配）
+    """
+    try:
+        ai_config = load_ai_config()
+        if not ai_config or not ai_config.enable_ai_grading:
+            return None  # AI评分未启用
+
+        if not question.answer_text:
+            return None  # 没有标准答案，无法AI评分
+
+        ai_client = AIClient(ai_config)
+        result = ai_client.evaluate_answer(
+            question_prompt=question.prompt,
+            standard_answer=question.answer_text,
+            user_answer=user_answer,
+            question_type=question_type_name
+        )
+
+        if result.get("error"):
+            print(f"⚠️  AI评分失败：{result.get('explanation')}，降级到关键词匹配")
+            return None  # AI评分失败，降级
+
+        is_correct = result["is_correct"]
+        score = result["score"]
+        explanation = result["explanation"]
+        matched_points = result.get("matched_points", [])
+
+        # 格式化反馈信息
+        if is_correct:
+            feedback = f"✓ AI评分：{score}分 - {explanation}"
+            if matched_points:
+                feedback += f"\n匹配要点：{', '.join(matched_points)}"
+        else:
+            feedback = f"✗ AI评分：{score}分 - {explanation}"
+
+        print(f"✅ AI评分成功：{'正确' if is_correct else '错误'} ({score}分)")
+        return (is_correct, feedback)
+
+    except Exception as e:
+        print(f"⚠️  AI评分异常：{str(e)}，降级到关键词匹配")
+        return None  # 异常时降级
+
+
 def _grade_answer(question: Question, user_answer: str) -> tuple[bool, str]:
     """判分逻辑"""
     if question.question_type == QuestionType.SINGLE_CHOICE:
@@ -497,6 +901,12 @@ def _grade_multi_choice(question: Question, user_answer: str) -> tuple[bool, str
 
 def _grade_cloze(question: Question, user_answer: str) -> tuple[bool, str]:
     """填空题判分"""
+    # 尝试使用AI评分
+    ai_result = _try_ai_grading(question, user_answer, "填空题")
+    if ai_result:
+        return ai_result
+
+    # AI评分失败或未启用，使用关键词匹配
     normalized_answer = user_answer.strip().lower()
 
     if question.keywords:
@@ -518,7 +928,12 @@ def _grade_qa(question: Question, user_answer: str) -> tuple[bool, str]:
     if not user_answer:
         return False, "回答不能为空"
 
-    # 简单的关键词匹配
+    # 尝试使用AI评分
+    ai_result = _try_ai_grading(question, user_answer, "问答题")
+    if ai_result:
+        return ai_result
+
+    # AI评分失败或未启用，使用关键词匹配
     if question.keywords:
         matched = []
         for keyword in question.keywords:

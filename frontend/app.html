@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>答题考试系统（AI版）</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo">考</div>
+        <div class="brand__text">
+          <p class="brand__title">答题考试系统</p>
+          <p class="brand__subtitle">AI Practice Suite</p>
+        </div>
+      </div>
+
+      <section class="stats-card">
+        <h2>当前状态</h2>
+        <div class="summary-grid">
+          <div>
+            <span class="summary-label">已答题数</span>
+            <span id="answered-count" class="summary-value">0</span>
+          </div>
+          <div>
+            <span class="summary-label">总题数</span>
+            <span id="total-count" class="summary-value">0</span>
+          </div>
+          <div>
+            <span class="summary-label">正确率</span>
+            <span id="accuracy" class="summary-value">0%</span>
+          </div>
+        </div>
+        <button class="btn btn--secondary btn--block" id="btn-open-history" type="button">
+          查看历史答题
+        </button>
+      </section>
+
+      <section class="stats-card">
+        <h2>系统说明</h2>
+        <p class="system-desc">
+          1. 上传知识文件（txt/md/pdf）<br/>
+          2. 配置题目参数<br/>
+          3. 开始答题<br/>
+          4. 查看结果和解析
+        </p>
+      </section>
+
+      <section class="session-controls">
+        <button class="btn btn--primary" id="btn-ai-config" onclick="window.open('/web/ai-config/index.html', '_blank')">
+          AI 配置
+        </button>
+        <p class="btn-hint">配置 AI API 以启用智能出题</p>
+
+        <button class="btn btn--primary" id="btn-wrong-questions" onclick="window.location.href='/web/wrong-questions/index.html'">
+          错题本
+        </button>
+        <p class="btn-hint">查看错题，巩固加强记忆</p>
+
+        <button class="btn btn--danger" id="btn-reset-data">
+          重置数据
+        </button>
+        <p class="btn-hint btn-hint--danger">警告：此操作不可恢复</p>
+      </section>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-panel">
+      <!-- 上传界面 -->
+      <div id="upload-view" class="view">
+        <header class="view-header">
+          <h1>上传知识文件</h1>
+          <p class="view-subtitle">支持 txt、md、pdf 格式，文件大小不超过 700KB</p>
+        </header>
+
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-title">点击或拖拽文件到此区域</div>
+          <div class="upload-hint">支持 .txt、.md、.pdf 格式</div>
+          <input type="file" id="file-input" class="file-input" accept=".txt,.md,.pdf" />
+        </div>
+
+        <div id="file-info" class="hidden file-info-card">
+          <h3>文件信息</h3>
+          <div class="file-details">
+            <div>文件名：<span id="filename" class="highlight"></span></div>
+            <div>知识条目：<span id="entry-count" class="highlight"></span> 条</div>
+          </div>
+          <p class="file-lock-hint">如需更换知识文件，请先点击右侧的“重置数据”。</p>
+        </div>
+
+        <div id="upload-session-indicator" class="upload-session-indicator hidden">
+          <div>
+            <p class="indicator-title">当前会话使用的知识库</p>
+            <p class="indicator-text">
+              <span id="upload-session-text"></span> · 已锁定。重置数据后可重新上传。
+            </p>
+          </div>
+        </div>
+
+        <div class="config-panel">
+          <h3 class="config-panel__title">题目配置</h3>
+          <div class="config-panel__body">
+            <div class="form-group">
+              <span class="form-label">题型选择</span>
+              <div class="checkbox-grid">
+                <label class="checkbox-item">
+                  <input type="checkbox" name="question-type" value="single" checked />
+                  <span>单选题</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="question-type" value="multi" checked />
+                  <span>多选题</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="question-type" value="cloze" checked />
+                  <span>填空题</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="question-type" value="qa" checked />
+                  <span>问答题</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="question-count">题目数量</label>
+                <input type="number" class="form-control" id="question-count" value="10" min="1" max="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="question-mode">出题顺序</label>
+                <select class="form-control" id="question-mode">
+                  <option value="sequential">顺序</option>
+                  <option value="random">随机</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="config-note">
+              系统会在配置可用的情况下优先调用 AI 生成题目，未配置则自动回退至本地题库生成。
+              <a href="/web/ai-config/index.html" target="_blank" rel="noopener">配置 AI 服务</a>
+            </div>
+          </div>
+          <div class="config-actions">
+            <button class="btn btn--primary btn--large" id="btn-generate" disabled>
+              生成题目
+            </button>
+          </div>
+        </div>
+
+        <div id="upload-error" class="hidden"></div>
+      </div>
+
+      <!-- 答题界面 -->
+      <div id="quiz-view" class="view hidden">
+        <div id="question-container"></div>
+      </div>
+
+      <!-- 结果界面 -->
+      <div id="result-view" class="view hidden">
+        <div class="result-card">
+          <div class="result-score" id="final-score">0%</div>
+          <div class="result-text">
+            正确 <span id="correct-count">0</span> 题，共 <span id="result-total">0</span> 题
+          </div>
+          <button class="btn btn--primary btn--large" id="btn-restart">重新开始</button>
+        </div>
+      </div>
+
+      <div id="history-view" class="view hidden">
+        <header class="view-header history-header">
+          <div>
+            <h1>历史答题记录</h1>
+            <p class="view-subtitle">回顾过往练习的题目、作答与解析，便于复盘巩固。</p>
+          </div>
+          <div class="history-header__actions">
+            <button class="btn btn--ghost btn--sm" id="btn-history-refresh" type="button">刷新</button>
+            <button class="btn btn--primary btn--sm" id="btn-history-back" type="button">返回练习</button>
+          </div>
+        </header>
+
+        <section class="history-filters">
+          <div class="history-filters__group">
+            <label>
+              <span>会话</span>
+              <select id="history-filter-session">
+                <option value="">全部会话</option>
+              </select>
+            </label>
+            <label>
+              <span>题型</span>
+              <select id="history-filter-type">
+                <option value="">全部题型</option>
+                <option value="SINGLE_CHOICE">单选题</option>
+                <option value="MULTI_CHOICE">多选题</option>
+                <option value="CLOZE">填空题</option>
+                <option value="QA">问答题</option>
+              </select>
+            </label>
+            <label>
+              <span>结果</span>
+              <select id="history-filter-result">
+                <option value="">全部</option>
+                <option value="true">答对</option>
+                <option value="false">答错</option>
+              </select>
+            </label>
+          </div>
+          <div class="history-filters__group">
+            <label>
+              <span>起始日期</span>
+              <input type="date" id="history-filter-from" />
+            </label>
+            <label>
+              <span>结束日期</span>
+              <input type="date" id="history-filter-to" />
+            </label>
+            <div class="history-filters__actions">
+              <button class="btn btn--ghost btn--sm" id="btn-history-reset" type="button">清空筛选</button>
+              <button class="btn btn--secondary btn--sm" id="btn-history-apply" type="button">应用筛选</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="history-status-bar">
+          <div id="history-status" class="history-status"></div>
+        </section>
+
+        <section class="history-content">
+          <div id="history-loading" class="history-loading hidden">
+            <div class="spinner"></div>
+            <span>正在加载历史记录...</span>
+          </div>
+          <div id="history-empty" class="history-empty hidden">
+            <h3>暂无历史记录</h3>
+            <p>完成一次练习后，再来这里复盘吧。</p>
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+
+        <footer class="history-pagination">
+          <button class="btn btn--ghost btn--sm" id="btn-history-prev" type="button">← 上一页</button>
+          <span id="history-page-info">第 0 / 0 页</span>
+          <button class="btn btn--ghost btn--sm" id="btn-history-next" type="button">下一页 →</button>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <template id="history-card-template">
+    <article class="history-card">
+      <header class="history-card__header">
+        <span class="chip chip--history" data-type-chip></span>
+        <span class="history-card__meta" data-time></span>
+        <span class="history-card__meta history-card__meta--session" data-session></span>
+      </header>
+      <h3 class="history-card__title" data-prompt></h3>
+      <div class="history-card__summary">
+        <span class="history-card__badge history-card__badge--result" data-result></span>
+        <span class="history-card__badge" data-mode></span>
+        <span class="history-card__badge history-card__badge--knowledge" data-knowledge></span>
+      </div>
+      <div class="history-card__body" data-options></div>
+      <div class="history-card__answers">
+        <div>
+          <span class="history-card__label">你的答案</span>
+          <span class="history-card__value" data-user-answer></span>
+        </div>
+        <div>
+          <span class="history-card__label">参考答案</span>
+          <span class="history-card__value" data-correct-answer></span>
+        </div>
+      </div>
+      <div class="history-card__explanation" data-explanation></div>
+    </article>
+  </template>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
