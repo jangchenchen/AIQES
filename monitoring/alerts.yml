@@ -1,0 +1,159 @@
+# Prometheus告警规则
+
+groups:
+  - name: qa_app_alerts
+    interval: 30s
+    rules:
+      # 高错误率告警
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(api_errors_total[5m]) /
+            rate(http_requests_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "API错误率过高"
+          description: "错误率超过10%，当前值: {{ $value | humanizePercentage }}"
+
+      # AI调用失败告警
+      - alert: AICallFailures
+        expr: |
+          (
+            rate(ai_errors_total[10m]) /
+            rate(ai_calls_total[10m])
+          ) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI调用失败率过高"
+          description: "AI调用失败率超过20%，当前值: {{ $value | humanizePercentage }}"
+
+      # 响应时间过慢告警
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "响应时间过慢"
+          description: "95分位响应时间超过2秒: {{ $value }}s"
+
+      # 活跃会话过多
+      - alert: TooManySessions
+        expr: active_sessions > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "活跃会话过多"
+          description: "当前活跃会话: {{ $value }}，可能存在内存泄漏"
+
+      # 文件上传失败率高
+      - alert: HighFileUploadFailureRate
+        expr: |
+          (
+            rate(file_upload_errors_total[10m]) /
+            rate(file_uploads_total[10m])
+          ) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "文件上传失败率过高"
+          description: "文件上传失败率超过30%"
+
+      # AI Token消耗过多
+      - alert: HighAITokenUsage
+        expr: rate(ai_tokens_used_total[1h]) > 100000
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "AI Token消耗过多"
+          description: "过去1小时AI Token消耗: {{ $value }}"
+
+      # 数据库查询慢
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "数据库查询变慢"
+          description: "95分位数据库查询时间超过500ms"
+
+      # 服务不可用
+      - alert: ServiceDown
+        expr: up{job="qa-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "QA服务不可用"
+          description: "QA应用已下线超过1分钟"
+
+      # 高内存使用
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes /
+            node_memory_MemTotal_bytes
+          ) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用率过高"
+          description: "内存使用率超过80%"
+
+      # 磁盘空间不足
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"} /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "磁盘空间不足"
+          description: "磁盘剩余空间低于10%"
+
+  - name: ai_metrics_alerts
+    interval: 60s
+    rules:
+      # AI响应时间异常
+      - alert: AIResponseTimeTooSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(ai_call_duration_seconds_bucket[10m])
+          ) > 30.0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI响应时间异常"
+          description: "95分位AI响应时间超过30秒: {{ $value }}s"
+
+      # AI调用量激增
+      - alert: AICallSpike
+        expr: |
+          rate(ai_calls_total[5m]) >
+          avg_over_time(rate(ai_calls_total[5m])[1h:]) * 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI调用量激增"
+          description: "AI调用量是过去1小时平均值的3倍"

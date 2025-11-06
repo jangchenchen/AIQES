@@ -1,0 +1,22 @@
+# 最小版 Dockerfile - 验证构建流程
+FROM python:3.11-slim
+
+# 创建用户和工作目录
+RUN useradd -m -u 1000 qauser
+WORKDIR /app
+
+# 复制核心文件
+COPY src/ ./src/
+COPY web_server.py ./
+
+# 创建目录
+RUN mkdir -p data uploads && chown -R qauser:qauser /app
+
+USER qauser
+EXPOSE 5001
+
+# 健康检查
+HEALTHCHECK CMD python -c "print('healthy')"
+
+# 启动命令
+CMD ["python", "-c", "print('QA System Docker image built successfully!')"]
