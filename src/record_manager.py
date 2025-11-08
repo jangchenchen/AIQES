@@ -162,7 +162,9 @@ class RecordManager:
                     "started_at": timestamp,
                     "total_answers": 0,
                     "correct_answers": 0,
-                    "knowledge_file": item.get("session_context", {}).get("knowledge_file"),
+                    "knowledge_file": item.get("session_context", {}).get(
+                        "knowledge_file"
+                    ),
                     "mode": item.get("session_context", {}).get("mode"),
                 }
                 summaries[session_id] = summary
@@ -198,7 +200,9 @@ class RecordManager:
                 continue
         return questions
 
-    def upsert_wrong_question(self, question: Question, *, last_plain_explanation: str) -> None:
+    def upsert_wrong_question(
+        self, question: Question, *, last_plain_explanation: str
+    ) -> None:
         entries = self._load_wrong_payloads(as_dict=True)
         record = {
             "question": _question_to_dict(question),
@@ -228,18 +232,19 @@ class RecordManager:
         # 筛选题型
         if question_type:
             entries = [
-                e for e in entries
+                e
+                for e in entries
                 if e.get("question", {}).get("question_type") == question_type.name
             ]
 
         # 排序
-        reverse = (order == "desc")
+        reverse = order == "desc"
         if sort_by == "last_wrong_at":
             entries.sort(key=lambda x: x.get("last_wrong_at", ""), reverse=reverse)
         elif sort_by == "identifier":
             entries.sort(
                 key=lambda x: x.get("question", {}).get("identifier", ""),
-                reverse=reverse
+                reverse=reverse,
             )
 
         # 分页
@@ -255,7 +260,7 @@ class RecordManager:
                 "page": page,
                 "page_size": page_size,
                 "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
-            }
+            },
         }
 
     def get_wrong_question_stats(self) -> Dict[str, Any]:
@@ -326,6 +331,7 @@ class RecordManager:
     def _iter_answer_history(self) -> Iterable[Dict[str, Any]]:
         if not self.history_path.exists():
             return []
+
         def generator() -> Iterable[Dict[str, Any]]:
             with self.history_path.open("r", encoding="utf-8") as handle:
                 for line in handle:
@@ -336,12 +342,15 @@ class RecordManager:
                         yield json.loads(line)
                     except json.JSONDecodeError:
                         continue
+
         return generator()
 
     def _write_wrong_payloads(self, entries: Iterable[Dict[str, Any]]) -> None:
         payload = list(entries)
         if payload:
-            self.wrong_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            self.wrong_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
         elif self.wrong_path.exists():
             self.wrong_path.unlink()
 

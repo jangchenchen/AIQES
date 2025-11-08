@@ -18,7 +18,6 @@ from src.question_generator import QuestionGenerator
 from src.question_models import Question, QuestionType
 from src.record_manager import RecordManager
 
-
 DEFAULT_KNOWLEDGE_PATH = Path("docs/Knowledge/电梯安全装置维护程序.md")
 AI_CONFIG_PATH = Path("AI_cf/cf.json")
 
@@ -73,7 +72,9 @@ class QuizSession:
             print()
         if self.total_auto:
             score = 100 * self.correct_auto / self.total_auto
-            print(f"自动判分题得分：{score:.1f}（{self.correct_auto}/{self.total_auto}）")
+            print(
+                f"自动判分题得分：{score:.1f}（{self.correct_auto}/{self.total_auto}）"
+            )
         else:  # pragma: no cover - safeguard
             print("无自动判分题目。")
 
@@ -95,7 +96,9 @@ class QuizSession:
             outcome = self._grade_open(question, user_answer)
         else:  # pragma: no cover - safety
             print("暂不支持的题型。")
-            outcome = GradeOutcome(is_correct=False, plain_explanation="该题型尚未实现自动判分。")
+            outcome = GradeOutcome(
+                is_correct=False, plain_explanation="该题型尚未实现自动判分。"
+            )
 
         if self.record_manager and self.session_id:
             self.record_manager.log_attempt(
@@ -115,7 +118,9 @@ class QuizSession:
                     last_plain_explanation=outcome.plain_explanation,
                 )
 
-    def _grade_single_choice(self, question: Question, user_answer: str) -> GradeOutcome:
+    def _grade_single_choice(
+        self, question: Question, user_answer: str
+    ) -> GradeOutcome:
         self.total_auto += 1
         correct_indices = question.correct_options or []
         correct_idx = correct_indices[0] if correct_indices else None
@@ -135,7 +140,9 @@ class QuizSession:
             else:
                 print("❌ 回答不正确。正确答案：", correct_label)
 
-        key_sentence = (question.answer_text or "").strip() or (question.explanation or "").strip()
+        key_sentence = (question.answer_text or "").strip() or (
+            question.explanation or ""
+        ).strip()
         summary_text = question.answer_text or key_sentence
         print("要点：", summary_text)
         plain_explanation = _plain_explanation_single(
@@ -159,7 +166,9 @@ class QuizSession:
         if not user_answer:
             print("未作答。正确答案：", correct_labels)
         else:
-            parsed_indices = _parse_multi_answer(user_answer, len(question.options or []))
+            parsed_indices = _parse_multi_answer(
+                user_answer, len(question.options or [])
+            )
             if parsed_indices is None:
                 print("答案格式不正确。正确答案：", correct_labels)
             else:
@@ -185,10 +194,16 @@ class QuizSession:
             is_correct=is_correct,
         )
         print("解析：", plain_explanation)
-        extra = {"selected_indices": parsed_indices} if parsed_indices is not None else None
-        return GradeOutcome(is_correct=is_correct, plain_explanation=plain_explanation, extra=extra)
+        extra = (
+            {"selected_indices": parsed_indices} if parsed_indices is not None else None
+        )
+        return GradeOutcome(
+            is_correct=is_correct, plain_explanation=plain_explanation, extra=extra
+        )
 
-    def _print_multi_feedback(self, indices: Iterable[int], correct_set: set[int], question: Question) -> None:
+    def _print_multi_feedback(
+        self, indices: Iterable[int], correct_set: set[int], question: Question
+    ) -> None:
         wrong = set(indices) - correct_set
         missing = correct_set - set(indices)
         print("❌ 回答不完全正确。")
@@ -255,7 +270,9 @@ class QuizSession:
             "matched_keywords": matched,
             "coverage_ratio": ratio,
         }
-        return GradeOutcome(is_correct=is_correct, plain_explanation=plain_explanation, extra=extra)
+        return GradeOutcome(
+            is_correct=is_correct, plain_explanation=plain_explanation, extra=extra
+        )
 
 
 def _option_label(idx: int | None) -> str:
@@ -350,9 +367,7 @@ def _plain_explanation_cloze(question: Question, *, is_correct: bool) -> str:
     reference = (question.explanation or "").strip()
     if is_correct:
         return f"空格填写“{answer_text}”就对了，原文提示就是：{reference}。"
-    return (
-        f"空格应填写“{answer_text}”，原文意思是：{reference}。记住这个关键词，下次不要再漏。"
-    )
+    return f"空格应填写“{answer_text}”，原文意思是：{reference}。记住这个关键词，下次不要再漏。"
 
 
 def _plain_explanation_qa(
@@ -364,7 +379,9 @@ def _plain_explanation_qa(
 ) -> str:
     matched_list = [kw for kw in matched_keywords]
     keyword_hint = "、".join(question.keywords[:6]) if question.keywords else ""
-    reference = (question.answer_text or "").strip() or (question.explanation or "").strip()
+    reference = (question.answer_text or "").strip() or (
+        question.explanation or ""
+    ).strip()
     ratio_percent = int(round(coverage_ratio * 100))
     if is_correct:
         return (
@@ -372,7 +389,9 @@ def _plain_explanation_qa(
             f"大约 {ratio_percent}% 的要求已提及。核心记忆点：{reference}。"
         )
     miss_part = (
-        f"建议把关键字补齐：{keyword_hint}。" if keyword_hint else "请结合原文补充要点。"
+        f"建议把关键字补齐：{keyword_hint}。"
+        if keyword_hint
+        else "请结合原文补充要点。"
     )
     return (
         f"目前覆盖率只有 {ratio_percent}% ，需要再补充。参考答案浓缩要点：{reference}。"
@@ -382,13 +401,29 @@ def _plain_explanation_qa(
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="基于知识点的问答训练系统")
-    parser.add_argument("--mode", choices=["sequential", "random"], default="sequential", help="出题顺序：顺序或随机")
+    parser.add_argument(
+        "--mode",
+        choices=["sequential", "random"],
+        default="sequential",
+        help="出题顺序：顺序或随机",
+    )
     parser.add_argument("--count", type=int, default=None, help="题目数量限制")
-    parser.add_argument("--types", nargs="*", choices=list(_TYPE_ALIAS.keys()), help="筛选题型")
+    parser.add_argument(
+        "--types", nargs="*", choices=list(_TYPE_ALIAS.keys()), help="筛选题型"
+    )
     parser.add_argument("--seed", type=int, default=None, help="随机数种子")
-    parser.add_argument("--enable-ai", action="store_true", help="加载AI配置，预留AI题库扩展能力")
-    parser.add_argument("--ai-questions", type=int, default=0, help="额外生成的 AI 题目数量")
-    parser.add_argument("--ai-temperature", type=float, default=0.7, help="AI 生成题目的 temperature 参数")
+    parser.add_argument(
+        "--enable-ai", action="store_true", help="加载AI配置，预留AI题库扩展能力"
+    )
+    parser.add_argument(
+        "--ai-questions", type=int, default=0, help="额外生成的 AI 题目数量"
+    )
+    parser.add_argument(
+        "--ai-temperature",
+        type=float,
+        default=0.7,
+        help="AI 生成题目的 temperature 参数",
+    )
     parser.add_argument(
         "--knowledge-file",
         type=str,
@@ -428,7 +463,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     type_filters: Set[QuestionType]
     if args.types:
-        type_filters = { _TYPE_ALIAS[t] for t in args.types }
+        type_filters = {_TYPE_ALIAS[t] for t in args.types}
         question_bank = [q for q in question_bank if q.question_type in type_filters]
         if not question_bank and args.ai_questions == 0 and not args.review_wrong:
             print("筛选后的题库为空，请调整题型筛选条件。")
@@ -441,7 +476,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.review_wrong:
         wrong_questions = record_manager.load_wrong_questions()
-        wrong_questions = [q for q in wrong_questions if q.question_type in type_filters]
+        wrong_questions = [
+            q for q in wrong_questions if q.question_type in type_filters
+        ]
         if not wrong_questions:
             print("暂无错题可复习，先完成一次练习再来试试吧。")
             return 0
@@ -458,7 +495,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(
                     "尝试生成 {count} 道 AI 题目（type: {types}）。".format(
                         count=args.ai_questions,
-                        types=", ".join(t.name for t in sorted(type_filters, key=lambda t: t.value)),
+                        types=", ".join(
+                            t.name for t in sorted(type_filters, key=lambda t: t.value)
+                        ),
                     )
                 )
         elif args.enable_ai:

@@ -62,7 +62,9 @@ def save_config(config: AIConfig, path: Path = CONFIG_PATH) -> None:
         dev_document=config.dev_document,
         timeout=config.timeout,
     )
-    path.write_text(json.dumps(working.to_payload(), ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(working.to_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def delete_config(path: Path = CONFIG_PATH) -> bool:
@@ -72,7 +74,9 @@ def delete_config(path: Path = CONFIG_PATH) -> bool:
     return False
 
 
-def test_connectivity(config: AIConfig, endpoint: Optional[str] = None) -> tuple[bool, str]:
+def test_connectivity(
+    config: AIConfig, endpoint: Optional[str] = None
+) -> tuple[bool, str]:
     target = normalize_url(endpoint or config.url)
     payload = {
         "model": config.model,
@@ -97,7 +101,9 @@ def test_connectivity(config: AIConfig, endpoint: Optional[str] = None) -> tuple
         return False, f"测试失败：{exc}"
 
 
-def prompt_input(prompt: str, default: Optional[str] = None, secret: bool = False) -> str:
+def prompt_input(
+    prompt: str, default: Optional[str] = None, secret: bool = False
+) -> str:
     if default:
         prompt = f"{prompt} [{default}]: "
     else:
@@ -126,10 +132,17 @@ def run_wizard(args: argparse.Namespace) -> int:
     print()
 
     url = prompt_input("请输入 API URL", existing.url if existing else None) or ""
-    key = prompt_input("请输入 API Key", existing.key if existing else None, secret=True) or ""
+    key = (
+        prompt_input("请输入 API Key", existing.key if existing else None, secret=True)
+        or ""
+    )
     model = prompt_input("请输入模型名称", existing.model if existing else None) or ""
-    dev_doc = prompt_input("开发者文档链接（可选）", existing.dev_document if existing else None)
-    timeout_raw = prompt_input("请求超时（秒，默认10）", str(existing.timeout if existing else DEFAULT_TIMEOUT))
+    dev_doc = prompt_input(
+        "开发者文档链接（可选）", existing.dev_document if existing else None
+    )
+    timeout_raw = prompt_input(
+        "请求超时（秒，默认10）", str(existing.timeout if existing else DEFAULT_TIMEOUT)
+    )
     try:
         timeout = float(timeout_raw)
     except ValueError:

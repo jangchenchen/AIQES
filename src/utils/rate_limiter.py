@@ -51,4 +51,3 @@ class RateLimiter:
             remaining = [ts for ts in timestamps if ts >= window_start]
             self._allowance[key] = remaining
             return max(self.config.capacity - len(remaining), 0)
-

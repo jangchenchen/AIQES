@@ -1,4 +1,5 @@
 """数据库迁移工具"""
+
 from __future__ import annotations
 
 import hashlib
@@ -40,7 +41,8 @@ class MigrationManager:
     def _ensure_migration_table(self) -> None:
         """确保迁移记录表存在"""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS schema_migrations (
                     version TEXT PRIMARY KEY,
                     description TEXT NOT NULL,
@@ -48,25 +50,27 @@ class MigrationManager:
                     applied_at TEXT NOT NULL,
                     execution_time_ms INTEGER
                 )
-            """)
+            """
+            )
             conn.commit()
 
     def get_applied_migrations(self) -> List[Tuple[str, str]]:
         """获取已应用的迁移"""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT version, checksum
                 FROM schema_migrations
                 ORDER BY version
-            """)
+            """
+            )
             return cursor.fetchall()
 
     def is_applied(self, version: str) -> bool:
         """检查迁移是否已应用"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
-                "SELECT 1 FROM schema_migrations WHERE version = ?",
-                (version,)
+                "SELECT 1 FROM schema_migrations WHERE version = ?", (version,)
             )
             return cursor.fetchone() is not None
 
@@ -90,17 +94,20 @@ class MigrationManager:
 
                 # 记录迁移
                 execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT INTO schema_migrations
                     (version, description, checksum, applied_at, execution_time_ms)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    migration.version,
-                    migration.description,
-                    migration.checksum,
-                    datetime.utcnow().isoformat() + "Z",
-                    int(execution_time),
-                ))
+                """,
+                    (
+                        migration.version,
+                        migration.description,
+                        migration.checksum,
+                        datetime.utcnow().isoformat() + "Z",
+                        int(execution_time),
+                    ),
+                )
 
                 conn.commit()
                 print(f"✅ 迁移成功 ({execution_time:.0f}ms)")
@@ -131,7 +138,7 @@ class MigrationManager:
                 # 删除迁移记录
                 conn.execute(
                     "DELETE FROM schema_migrations WHERE version = ?",
-                    (migration.version,)
+                    (migration.version,),
                 )
 
                 conn.commit()
@@ -231,9 +238,8 @@ MIGRATIONS: List[Migration] = [
             DROP INDEX IF EXISTS idx_answer_history_timestamp;
             DROP INDEX IF EXISTS idx_answer_history_session;
             DROP TABLE IF EXISTS answer_history;
-        """
+        """,
     ),
-
     Migration(
         version="002_add_performance_indexes",
         description="添加性能优化索引",
@@ -246,9 +252,8 @@ MIGRATIONS: List[Migration] = [
         down_sql="""
             DROP INDEX IF EXISTS idx_answer_history_composite;
             DROP INDEX IF EXISTS idx_answer_history_correct;
-        """
+        """,
     ),
-
     Migration(
         version="003_add_user_tracking",
         description="添加用户追踪字段",
@@ -263,9 +268,8 @@ MIGRATIONS: List[Migration] = [
             -- SQLite 不支持 DROP COLUMN，需要重建表
             -- 这里仅作示例，实际使用时需要迁移数据
             DROP INDEX IF EXISTS idx_answer_history_user_ip;
-        """
+        """,
     ),
-
     Migration(
         version="004_add_ai_metrics",
         description="添加AI调用指标表",
@@ -293,7 +297,7 @@ MIGRATIONS: List[Migration] = [
             DROP INDEX IF EXISTS idx_ai_metrics_success;
             DROP INDEX IF EXISTS idx_ai_metrics_timestamp;
             DROP TABLE IF EXISTS ai_call_metrics;
-        """
+        """,
     ),
 ]
 

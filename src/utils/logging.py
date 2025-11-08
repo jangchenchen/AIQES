@@ -22,7 +22,14 @@ class JsonLogFormatter(logging.Formatter):
         for key, value in record.__dict__.items():
             if key.startswith("_"):
                 continue
-            if key in payload or key in {"args", "msg", "message", "exc_info", "exc_text", "stack_info"}:
+            if key in payload or key in {
+                "args",
+                "msg",
+                "message",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+            }:
                 continue
             payload[key] = value
         return json.dumps(payload, ensure_ascii=False)
@@ -35,4 +42,3 @@ def configure_logging(level: int = logging.INFO) -> None:
     root.handlers.clear()
     root.setLevel(level)
     root.addHandler(handler)
-

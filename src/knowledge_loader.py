@@ -5,7 +5,6 @@ import re
 from dataclasses import dataclass, field
 from typing import List
 
-
 MAX_KNOWLEDGE_FILE_SIZE = 700_000  # bytes, ~700KB to keep AI 请求高效
 
 
@@ -150,9 +149,7 @@ def _extract_text_from_pdf(path: pathlib.Path) -> str:
     try:
         import PyPDF2  # type: ignore
     except ImportError as exc:  # pragma: no cover - optional dependency
-        raise ImportError(
-            "读取 PDF 需要安装 PyPDF2：pip install PyPDF2"
-        ) from exc
+        raise ImportError("读取 PDF 需要安装 PyPDF2：pip install PyPDF2") from exc
 
     text_chunks: List[str] = []
     with path.open("rb") as handle:

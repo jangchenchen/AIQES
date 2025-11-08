@@ -24,7 +24,10 @@ class Question:
     keywords: List[str] = field(default_factory=list)
 
     def is_multiple_choice(self) -> bool:
-        return self.question_type in {QuestionType.SINGLE_CHOICE, QuestionType.MULTI_CHOICE}
+        return self.question_type in {
+            QuestionType.SINGLE_CHOICE,
+            QuestionType.MULTI_CHOICE,
+        }
 
 
 __all__ = ["Question", "QuestionType"]

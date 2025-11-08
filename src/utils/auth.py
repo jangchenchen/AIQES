@@ -1,4 +1,5 @@
 """API 鉴权工具"""
+
 from __future__ import annotations
 
 import os
@@ -8,7 +9,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from flask import request
-
 
 API_KEY_FILE = Path("data/api_key.txt")
 API_KEY_ENV = "API_KEY"
@@ -55,6 +55,7 @@ def verify_api_key(provided_key: Optional[str]) -> bool:
 
 def require_api_key(func: Callable) -> Callable:
     """装饰器：要求提供有效的 API 密钥"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # 从 Header 或 Query 参数获取 API 密钥
@@ -62,6 +63,7 @@ def require_api_key(func: Callable) -> Callable:
 
         if not verify_api_key(api_key):
             from flask import jsonify
+
             return jsonify({"error": "无效的 API 密钥"}), 401
 
         return func(*args, **kwargs)

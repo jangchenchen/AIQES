@@ -1,4 +1,5 @@
 """文件上传验证工具"""
+
 from __future__ import annotations
 
 import io
@@ -7,17 +8,20 @@ from typing import Optional, Tuple
 
 try:
     import magic
+
     HAS_MAGIC = True
 except ImportError:
     HAS_MAGIC = False
 
 try:
     from pypdf import PdfReader
+
     HAS_PYPDF = True
 except ImportError:
     try:
         # 向后兼容 PyPDF2
         from PyPDF2 import PdfReader
+
         HAS_PYPDF = True
     except ImportError:
         HAS_PYPDF = False
@@ -45,6 +49,7 @@ MAX_PDF_DECODED_SIZE = 10 * 1024 * 1024  # 10MB
 
 class FileValidationError(Exception):
     """文件验证失败"""
+
     pass
 
 
@@ -68,7 +73,9 @@ def verify_mime_type(file_content: bytes, filename: str) -> Tuple[bool, str]:
 
             # 额外验证：MIME 类型应该与扩展名匹配
             expected_mime = EXT_TO_MIME.get(ext)
-            if expected_mime and not detected_mime.startswith(expected_mime.split("/")[0]):
+            if expected_mime and not detected_mime.startswith(
+                expected_mime.split("/")[0]
+            ):
                 return False, detected_mime
 
             return True, detected_mime
@@ -131,9 +138,7 @@ def validate_pdf_size(file_content: bytes) -> Tuple[bool, int]:
 
 
 def validate_upload_file(
-    file_content: bytes,
-    filename: str,
-    max_size: Optional[int] = None
+    file_content: bytes, filename: str, max_size: Optional[int] = None
 ) -> Tuple[bool, Optional[str]]:
     """
     验证上传的文件
@@ -144,7 +149,10 @@ def validate_upload_file(
 
     # 1. 检查文件大小
     if len(file_content) > max_size:
-        return False, f"文件过大（{len(file_content) // 1024}KB），最大支持 {max_size // 1024}KB"
+        return (
+            False,
+            f"文件过大（{len(file_content) // 1024}KB），最大支持 {max_size // 1024}KB",
+        )
 
     # 2. 检查扩展名
     ext = Path(filename).suffix.lower()
@@ -160,7 +168,10 @@ def validate_upload_file(
     if ext == ".pdf":
         is_valid, decoded_size = validate_pdf_size(file_content)
         if not is_valid:
-            return False, f"PDF 解码后过大（{decoded_size // 1024 // 1024}MB），最大支持 {MAX_PDF_DECODED_SIZE // 1024 // 1024}MB"
+            return (
+                False,
+                f"PDF 解码后过大（{decoded_size // 1024 // 1024}MB），最大支持 {MAX_PDF_DECODED_SIZE // 1024 // 1024}MB",
+            )
 
     return True, None
 
@@ -170,7 +181,7 @@ def sanitize_filename(filename: str) -> str:
     import re
 
     # 移除路径分隔符和特殊字符
-    cleaned = re.sub(r'[\/\\:*?"<>|]', '', filename)
+    cleaned = re.sub(r'[\/\\:*?"<>|]', "", filename)
 
     # 限制长度
     if len(cleaned) > 255:

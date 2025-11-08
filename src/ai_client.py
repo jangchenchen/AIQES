@@ -6,9 +6,12 @@ import re
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence
 
 from .question_models import Question, QuestionType
+
+if TYPE_CHECKING:
+    from .knowledge_loader import KnowledgeEntry
 
 
 _QTYPE_ALIAS = {
@@ -68,7 +71,9 @@ class AIClient:
     ) -> List[Question]:
         if count <= 0:
             return []
-        type_labels = sorted({self._question_type_to_label(qt) for qt in question_types})
+        type_labels = sorted(
+            {self._question_type_to_label(qt) for qt in question_types}
+        )
         if not type_labels:
             type_labels = ["single", "multi", "cloze", "qa"]
 
@@ -120,7 +125,9 @@ class AIClient:
             chunks.append(f"- {entry.component}：{entry.raw_text}")
         return "\n".join(chunks)
 
-    def _build_prompt(self, summary: str, count: int, type_labels: Sequence[str]) -> str:
+    def _build_prompt(
+        self, summary: str, count: int, type_labels: Sequence[str]
+    ) -> str:
         types_str = ", ".join(type_labels)
         template = (
             "以下是电梯安全维护的知识点：\n"
@@ -147,7 +154,9 @@ class AIClient:
         }
         request = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(request, timeout=self.config.timeout) as response:
+            with urllib.request.urlopen(
+                request, timeout=self.config.timeout
+            ) as response:
                 raw = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:  # pragma: no cover - network path
             detail = exc.read().decode("utf-8", errors="ignore")
@@ -169,7 +178,11 @@ class AIClient:
                     if isinstance(content, str):
                         return content
                     if isinstance(content, list):
-                        parts = [part.get("text", "") for part in content if isinstance(part, dict)]
+                        parts = [
+                            part.get("text", "")
+                            for part in content
+                            if isinstance(part, dict)
+                        ]
                         merged = "".join(parts).strip()
                         if merged:
                             return merged
@@ -214,7 +227,9 @@ class AIClient:
             return text[start : end + 1]
         return None
 
-    def _build_question(self, raw: Dict[str, Any], fallback_index: int) -> Optional[Question]:
+    def _build_question(
+        self, raw: Dict[str, Any], fallback_index: int
+    ) -> Optional[Question]:
         raw_type = str(raw.get("type", "")).strip().lower()
         question_type = _QTYPE_ALIAS.get(raw_type)
         if question_type is None:
@@ -230,7 +245,9 @@ class AIClient:
             options = self._normalize_options(raw.get("options"))
             if not options:
                 return None
-            correct = self._normalize_option_answers(raw.get("answer"), question_type, options)
+            correct = self._normalize_option_answers(
+                raw.get("answer"), question_type, options
+            )
             if correct is None:
                 return None
             answer_text = "；".join(options[idx] for idx in correct)
@@ -317,7 +334,9 @@ class AIClient:
             if normalized:
                 return normalized[:8]
         if isinstance(keywords, str) and keywords.strip():
-            return [segment.strip() for segment in keywords.split("，") if segment.strip()][:8]
+            return [
+                segment.strip() for segment in keywords.split("，") if segment.strip()
+            ][:8]
         if fallback:
             extracted = list({token for token in self._extract_tokens(fallback)})
             return extracted[:8]

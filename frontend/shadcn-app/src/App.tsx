@@ -497,7 +497,7 @@ export default function App() {
             <p className="text-sm uppercase tracking-[0.3em] opacity-80">QA SYSTEM</p>
             <h1 className="mt-3 text-3xl font-semibold">知识练习驾驶舱</h1>
             <p className="text-sm opacity-80">
-              统一管理题目生成、AI 配置、错题复练与答题历史，所有数据均来自现有 Flask API。
+              统一管理题目生成、AI 配置、错题复练与答题历史。
             </p>
           </div>
           <div className={cn("rounded-3xl p-4 text-right shadow-lg backdrop-blur", heroOverlayClass)}>
@@ -1090,10 +1090,7 @@ export default function App() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className={cn("text-xs uppercase tracking-[0.4em]", mutedText)}>QA SYSTEM</p>
-              <h1 className="mt-2 text-3xl font-semibold">电梯安全知识 · 智能答题台</h1>
-              <p className={cn("text-sm", mutedText)}>
-                React + Vite + shadcn/ui 全面改版，与 `web_server.py` API 实时联动。
-              </p>
+              <h1 className="mt-2 text-3xl font-semibold">答题考试系统AI版</h1>
             </div>
             <div className="flex items-center gap-3 text-xs">
               <span className={cn("flex items-center gap-1", mutedText)}>

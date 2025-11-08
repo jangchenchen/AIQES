@@ -8,7 +8,6 @@ from typing import List, Sequence, Tuple
 from .knowledge_loader import KnowledgeEntry
 from .question_models import Question, QuestionType
 
-
 _STOPWORDS = {
     "检查",
     "调整",
@@ -32,7 +31,9 @@ _STOPWORDS = {
 
 
 class QuestionGenerator:
-    def __init__(self, entries: Sequence[KnowledgeEntry], seed: int | None = None) -> None:
+    def __init__(
+        self, entries: Sequence[KnowledgeEntry], seed: int | None = None
+    ) -> None:
         self.entries = list(entries)
         self._rng = random.Random(seed)
         self._all_sentences: List[Tuple[str, str]] = []
@@ -48,7 +49,9 @@ class QuestionGenerator:
         unique_idx = count(1)
 
         other_sentences_by_component = {
-            entry.component: [s for comp, s in self._all_sentences if comp != entry.component]
+            entry.component: [
+                s for comp, s in self._all_sentences if comp != entry.component
+            ]
             for entry in self.entries
         }
 
@@ -88,7 +91,9 @@ class QuestionGenerator:
                 continue
             num_correct = min(3, len(sentences))
             correct_sentences = self._rng.sample(sentences, num_correct)
-            distractor_candidates = [s for s in other_sentences if s not in correct_sentences]
+            distractor_candidates = [
+                s for s in other_sentences if s not in correct_sentences
+            ]
             if len(distractor_candidates) < 2:
                 continue
             num_distractors = max(2, 5 - num_correct)
@@ -96,7 +101,9 @@ class QuestionGenerator:
             distractors = self._rng.sample(distractor_candidates, num_distractors)
             options = correct_sentences + distractors
             self._rng.shuffle(options)
-            correct_indices = sorted([options.index(sentence) for sentence in correct_sentences])
+            correct_indices = sorted(
+                [options.index(sentence) for sentence in correct_sentences]
+            )
             questions.append(
                 Question(
                     identifier=f"{entry.component}-MC-{next(unique_idx)}",
@@ -203,7 +210,7 @@ def _make_cloze(sentence: str, component: str) -> tuple[str | None, str | None]:
     match = numeric_pattern.search(sentence)
     if match:
         answer = match.group(0)
-        return sentence[:match.start()] + "____" + sentence[match.end():], answer
+        return sentence[: match.start()] + "____" + sentence[match.end() :], answer
 
     if component in sentence:
         return sentence.replace(component, "____", 1), component
@@ -218,7 +225,9 @@ def _make_cloze(sentence: str, component: str) -> tuple[str | None, str | None]:
 
 def _extract_keywords(entry: KnowledgeEntry) -> List[str]:
     keywords: List[str] = []
-    numeric_tokens = set(re.findall(r"\d+(?:\.\d+)?%?|\d+m/s|\d+年|\d+次", entry.raw_text))
+    numeric_tokens = set(
+        re.findall(r"\d+(?:\.\d+)?%?|\d+m/s|\d+年|\d+次", entry.raw_text)
+    )
     keywords.extend(list(numeric_tokens))
     word_candidates = re.findall(r"[\u4e00-\u9fa5]{2,4}", entry.raw_text)
     for word in word_candidates:

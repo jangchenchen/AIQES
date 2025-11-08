@@ -1,4 +1,5 @@
 """数据库备份和恢复工具"""
+
 from __future__ import annotations
 
 import gzip
@@ -85,7 +86,9 @@ class BackupManager:
             with open(output_path, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-    def restore_backup(self, backup_path: Path, target_path: Optional[Path] = None) -> None:
+    def restore_backup(
+        self, backup_path: Path, target_path: Optional[Path] = None
+    ) -> None:
         """恢复备份"""
         if target_path is None:
             target_path = self.db_path
@@ -149,7 +152,7 @@ class BackupManager:
         if len(backups) <= self.max_backups:
             return
 
-        to_delete = backups[self.max_backups:]
+        to_delete = backups[self.max_backups :]
         print(f"🗑️  清理 {len(to_delete)} 个旧备份...")
 
         for backup in to_delete:
@@ -163,13 +166,17 @@ class BackupManager:
 
         for backup in backups:
             stat = backup.stat()
-            info.append({
-                "name": backup.name,
-                "path": backup,
-                "size": stat.st_size,
-                "created_at": datetime.fromtimestamp(stat.st_mtime),
-                "age_days": (datetime.now() - datetime.fromtimestamp(stat.st_mtime)).days,
-            })
+            info.append(
+                {
+                    "name": backup.name,
+                    "path": backup,
+                    "size": stat.st_size,
+                    "created_at": datetime.fromtimestamp(stat.st_mtime),
+                    "age_days": (
+                        datetime.now() - datetime.fromtimestamp(stat.st_mtime)
+                    ).days,
+                }
+            )
 
         return info
 
@@ -187,7 +194,9 @@ class BackupManager:
         age = datetime.now() - latest_time
 
         if age > timedelta(hours=interval_hours):
-            print(f"⏰ 距上次备份已过 {age.total_seconds() / 3600:.1f} 小时，执行自动备份...")
+            print(
+                f"⏰ 距上次备份已过 {age.total_seconds() / 3600:.1f} 小时，执行自动备份..."
+            )
             self.create_backup(description="auto")
         else:
             print(f"✓ 备份仍然新鲜（{age.total_seconds() / 3600:.1f} 小时前）")
@@ -199,8 +208,8 @@ def scheduled_backup(
     interval_hours: int = 24,
 ) -> None:
     """定时备份任务"""
-    import time
     import threading
+    import time
 
     def backup_loop():
         manager = BackupManager(db_path, backup_dir)

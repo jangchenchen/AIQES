@@ -1,9 +1,9 @@
 """AI 提示注入过滤工具"""
+
 from __future__ import annotations
 
 import re
 from typing import List
-
 
 # 危险关键词列表（提示注入攻击常用词）
 DANGEROUS_PATTERNS = [
@@ -12,7 +12,6 @@ DANGEROUS_PATTERNS = [
     r"forget\s+(everything|all|previous)",
     r"disregard\s+(previous|above)",
     r"override\s+instructions?",
-
     # 角色伪装
     r"you\s+are\s+(now|a)\s+(admin|developer|system|god|root)",
     r"you\s+are\s+now\s+an?\s+\w+\s+with\s+(full|admin|root)",  # "you are now an admin with full"
@@ -21,20 +20,17 @@ DANGEROUS_PATTERNS = [
     r"system\s*:\s*",
     r"assistant\s*:\s*",
     r"act\s+as\s+(admin|root|system)",
-
     # 越狱尝试
     r"jailbreak",
     r"do\s+anything\s+now",
     r"DAN\s+mode",
     r"developer\s+mode",
     r"escape\s+(sandbox|restrictions?)",
-
     # 恶意命令
     r"execute\s+code",
     r"run\s+command",
     r"eval\s*\(",
     r"exec\s*\(",
-
     # 敏感操作
     r"delete\s+(all|everything|database)",
     r"drop\s+table",
@@ -43,7 +39,9 @@ DANGEROUS_PATTERNS = [
 ]
 
 # 编译正则表达式
-COMPILED_PATTERNS = [re.compile(pattern, re.IGNORECASE) for pattern in DANGEROUS_PATTERNS]
+COMPILED_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in DANGEROUS_PATTERNS
+]
 
 
 def contains_prompt_injection(text: str) -> bool:
@@ -106,10 +104,10 @@ def sanitize_user_input(text: str, max_length: int = 5000) -> str:
     sanitized = text[:max_length]
 
     # 2. 移除控制字符（保留换行和制表符）
-    sanitized = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', sanitized)
+    sanitized = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", sanitized)
 
     # 3. 规范化空白字符
-    sanitized = re.sub(r'\s+', ' ', sanitized)
+    sanitized = re.sub(r"\s+", " ", sanitized)
 
     return sanitized.strip()
 
@@ -140,18 +138,20 @@ def is_safe_for_ai_prompt(text: str, strict: bool = False) -> tuple[bool, str]:
     # 严格模式：额外检查
     if strict:
         # 检查是否包含过多重复字符（可能是攻击）
-        if re.search(r'(.)\1{50,}', text):
+        if re.search(r"(.)\1{50,}", text):
             return False, "包含过多重复字符"
 
         # 检查是否包含过多特殊符号
-        special_chars = len(re.findall(r'[^a-zA-Z0-9\u4e00-\u9fa5\s\.\,\!\?\-]', text))
+        special_chars = len(re.findall(r"[^a-zA-Z0-9\u4e00-\u9fa5\s\.\,\!\?\-]", text))
         if special_chars > len(text) * 0.3:
             return False, "包含过多特殊符号"
 
     return True, ""
 
 
-def create_safe_prompt(user_input: str, template: str, placeholder: str = "{input}") -> str:
+def create_safe_prompt(
+    user_input: str, template: str, placeholder: str = "{input}"
+) -> str:
     """
     创建安全的 AI 提示（在模板中安全地插入用户输入）
 

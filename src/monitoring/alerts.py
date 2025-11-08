@@ -1,4 +1,5 @@
 """监控告警系统"""
+
 from __future__ import annotations
 
 import json
@@ -17,6 +18,7 @@ from urllib import request as urllib_request
 
 class AlertSeverity(Enum):
     """告警严重级别"""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -26,6 +28,7 @@ class AlertSeverity(Enum):
 @dataclass
 class Alert:
     """告警"""
+
     name: str
     severity: AlertSeverity
     message: str
@@ -155,13 +158,15 @@ class WebhookChannel(AlertChannel):
         try:
             payload = {
                 "text": f"[{alert.severity.value.upper()}] {alert.name}",
-                "attachments": [{
-                    "color": self._get_color(alert.severity),
-                    "fields": [
-                        {"title": "Message", "value": alert.message},
-                        {"title": "Time", "value": alert.timestamp.isoformat()},
-                    ]
-                }]
+                "attachments": [
+                    {
+                        "color": self._get_color(alert.severity),
+                        "fields": [
+                            {"title": "Message", "value": alert.message},
+                            {"title": "Time", "value": alert.timestamp.isoformat()},
+                        ],
+                    }
+                ],
             }
 
             data = json.dumps(payload).encode("utf-8")
@@ -270,6 +275,7 @@ class AlertManager:
 
     def start(self, interval_seconds: int = 60) -> None:
         """启动定期检查"""
+
         def check_loop():
             while not self._stop_event.wait(timeout=interval_seconds):
                 self._check_rules()
@@ -314,31 +320,37 @@ def create_default_rules(metrics_collector) -> List[AlertRule]:
     rules = []
 
     # 高错误率告警
-    rules.append(AlertRule(
-        name="high_error_rate",
-        condition=lambda: _check_error_rate(metrics_collector),
-        severity=AlertSeverity.ERROR,
-        message="API 错误率超过 10%",
-        cooldown_seconds=600,
-    ))
+    rules.append(
+        AlertRule(
+            name="high_error_rate",
+            condition=lambda: _check_error_rate(metrics_collector),
+            severity=AlertSeverity.ERROR,
+            message="API 错误率超过 10%",
+            cooldown_seconds=600,
+        )
+    )
 
     # AI 调用失败告警
-    rules.append(AlertRule(
-        name="ai_call_failures",
-        condition=lambda: _check_ai_failures(metrics_collector),
-        severity=AlertSeverity.WARNING,
-        message="AI 调用失败次数过多",
-        cooldown_seconds=300,
-    ))
+    rules.append(
+        AlertRule(
+            name="ai_call_failures",
+            condition=lambda: _check_ai_failures(metrics_collector),
+            severity=AlertSeverity.WARNING,
+            message="AI 调用失败次数过多",
+            cooldown_seconds=300,
+        )
+    )
 
     # 响应时间告警
-    rules.append(AlertRule(
-        name="slow_responses",
-        condition=lambda: _check_slow_responses(metrics_collector),
-        severity=AlertSeverity.WARNING,
-        message="响应时间超过阈值",
-        cooldown_seconds=300,
-    ))
+    rules.append(
+        AlertRule(
+            name="slow_responses",
+            condition=lambda: _check_slow_responses(metrics_collector),
+            severity=AlertSeverity.WARNING,
+            message="响应时间超过阈值",
+            cooldown_seconds=300,
+        )
+    )
 
     return rules
 

@@ -1,4 +1,5 @@
 """应用监控指标收集"""
+
 from __future__ import annotations
 
 import time
@@ -12,6 +13,7 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class MetricPoint:
     """单个指标点"""
+
     timestamp: datetime
     value: float
     labels: Dict[str, str] = field(default_factory=dict)
@@ -20,6 +22,7 @@ class MetricPoint:
 @dataclass
 class Counter:
     """计数器"""
+
     name: str
     help: str
     value: float = 0.0
@@ -33,6 +36,7 @@ class Counter:
 @dataclass
 class Gauge:
     """仪表盘（当前值）"""
+
     name: str
     help: str
     value: float = 0.0
@@ -54,6 +58,7 @@ class Gauge:
 @dataclass
 class Histogram:
     """直方图（延迟分布）"""
+
     name: str
     help: str
     buckets: List[float]
@@ -87,10 +92,7 @@ class MetricsCollector:
         self._timeseries: Dict[str, List[MetricPoint]] = defaultdict(list)
 
     def counter(
-        self,
-        name: str,
-        help: str,
-        labels: Optional[Dict[str, str]] = None
+        self, name: str, help: str, labels: Optional[Dict[str, str]] = None
     ) -> Counter:
         """获取或创建计数器"""
         key = f"{name}:{labels}" if labels else name
@@ -101,10 +103,7 @@ class MetricsCollector:
             return self._counters[key]
 
     def gauge(
-        self,
-        name: str,
-        help: str,
-        labels: Optional[Dict[str, str]] = None
+        self, name: str, help: str, labels: Optional[Dict[str, str]] = None
     ) -> Gauge:
         """获取或创建仪表盘"""
         key = f"{name}:{labels}" if labels else name
@@ -119,7 +118,7 @@ class MetricsCollector:
         name: str,
         help: str,
         buckets: Optional[List[float]] = None,
-        labels: Optional[Dict[str, str]] = None
+        labels: Optional[Dict[str, str]] = None,
     ) -> Histogram:
         """获取或创建直方图"""
         if buckets is None:
@@ -140,13 +139,11 @@ class MetricsCollector:
         name: str,
         value: float,
         labels: Optional[Dict[str, str]] = None,
-        max_points: int = 1000
+        max_points: int = 1000,
     ) -> None:
         """记录时间序列数据"""
         point = MetricPoint(
-            timestamp=datetime.utcnow(),
-            value=value,
-            labels=labels or {}
+            timestamp=datetime.utcnow(), value=value, labels=labels or {}
         )
 
         with self._lock:
@@ -161,8 +158,14 @@ class MetricsCollector:
         """获取所有指标"""
         with self._lock:
             return {
-                "counters": {k: {"value": c.value, "labels": c.labels} for k, c in self._counters.items()},
-                "gauges": {k: {"value": g.value, "labels": g.labels} for k, g in self._gauges.items()},
+                "counters": {
+                    k: {"value": c.value, "labels": c.labels}
+                    for k, c in self._counters.items()
+                },
+                "gauges": {
+                    k: {"value": g.value, "labels": g.labels}
+                    for k, g in self._gauges.items()
+                },
                 "histograms": {
                     k: {
                         "sum": h.sum,
@@ -174,7 +177,11 @@ class MetricsCollector:
                 },
                 "timeseries": {
                     name: [
-                        {"timestamp": p.timestamp.isoformat(), "value": p.value, "labels": p.labels}
+                        {
+                            "timestamp": p.timestamp.isoformat(),
+                            "value": p.value,
+                            "labels": p.labels,
+                        }
                         for p in points
                     ]
                     for name, points in self._timeseries.items()
@@ -209,7 +216,9 @@ class MetricsCollector:
                 for i, bucket in enumerate(histogram.buckets):
                     bucket_labels = {**histogram.labels, "le": str(bucket)}
                     bucket_str = self._format_labels(bucket_labels)
-                    lines.append(f"{histogram.name}_bucket{bucket_str} {histogram.counts[i]}")
+                    lines.append(
+                        f"{histogram.name}_bucket{bucket_str} {histogram.counts[i]}"
+                    )
 
                 lines.append(f"{histogram.name}_sum{labels_str} {histogram.sum}")
                 lines.append(f"{histogram.name}_count{labels_str} {histogram.count}")
@@ -345,6 +354,7 @@ class Timer:
 
 def track_request(func):
     """装饰器：追踪请求"""
+
     def wrapper(*args, **kwargs):
         AppMetrics.http_requests_total.inc()
 
@@ -361,6 +371,7 @@ def track_request(func):
 
 def track_ai_call(func):
     """装饰器：追踪 AI 调用"""
+
     def wrapper(*args, **kwargs):
         AppMetrics.ai_calls_total.inc()
 
