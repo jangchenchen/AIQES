@@ -4,7 +4,7 @@
 import json
 import sys
 from pathlib import Path
-from subprocess import run, PIPE
+from subprocess import PIPE, run
 
 
 def cleanup_test_data():

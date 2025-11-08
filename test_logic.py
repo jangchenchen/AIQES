@@ -2,6 +2,7 @@
 """测试脚本：检测代码中的潜在逻辑问题"""
 
 from pathlib import Path
+
 from src.knowledge_loader import load_knowledge_entries
 from src.question_generator import QuestionGenerator
 from src.question_models import QuestionType
@@ -107,7 +108,7 @@ def test_cloze_generation():
 def test_answer_parsing():
     """测试答案解析逻辑"""
     print("=== 测试答案解析 ===")
-    from main import _parse_multi_answer, _letter_to_index
+    from main import _letter_to_index, _parse_multi_answer
 
     test_cases = [
         # (输入, 选项数量, 期望结果)

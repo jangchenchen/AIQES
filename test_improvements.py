@@ -38,8 +38,8 @@ def test_ai_client_enhancements():
     from src.ai_client import (
         AIClient,
         AIConfig,
-        AITransportError,
         AIResponseFormatError,
+        AITransportError,
     )
 
     print("✓ 成功导入 AIClient")

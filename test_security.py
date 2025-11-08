@@ -14,8 +14,9 @@ def test_auth():
     print("测试 API 鉴权")
     print("=" * 60)
 
-    from src.utils.auth import generate_api_key, save_api_key, get_api_key, API_KEY_FILE
     import secrets
+
+    from src.utils.auth import API_KEY_FILE, generate_api_key, get_api_key, save_api_key
 
     # 清理旧的测试密钥
     if API_KEY_FILE.exists():
@@ -83,8 +84,9 @@ def test_session_manager():
     print("测试会话管理器")
     print("=" * 60)
 
-    from src.utils.session_manager import SessionManager
     import time
+
+    from src.utils.session_manager import SessionManager
 
     # 创建会话管理器（TTL 2秒用于测试）
     mgr = SessionManager(ttl_seconds=2)
@@ -134,9 +136,9 @@ def test_prompt_sanitizer():
     print("=" * 60)
 
     from src.utils.prompt_sanitizer import (
+        contains_prompt_injection,
         is_safe_for_ai_prompt,
         sanitize_user_input,
-        contains_prompt_injection,
     )
 
     # 测试安全输入
@@ -186,8 +188,9 @@ def test_rate_limiter():
     print("测试速率限制")
     print("=" * 60)
 
-    from src.utils.rate_limiter import RateLimiter, RateLimitConfig
     import time
+
+    from src.utils.rate_limiter import RateLimitConfig, RateLimiter
 
     # 创建限制器（3次/2秒）
     limiter = RateLimiter(RateLimitConfig(capacity=3, window_seconds=2.0))
