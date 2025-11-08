@@ -8,7 +8,6 @@ uploads/
 .claude/
 data/answer_history*.jsonl
 data/wrong_questions*.json
-test_*.py
 AI_CONFIG_TEST_REPORT.md
 FINAL_TEST_REPORT.md
 IMPROVEMENTS_VERIFICATION.md
