@@ -35,7 +35,7 @@ def test_answer_recording():
         print(f"✓ 找到 {len(lines)} 条答题记录")
 
         # 验证每行都是合法 JSON
-        for i, line in enumerate(lines[-3:], start=max(1, len(lines)-2)):
+        for i, line in enumerate(lines[-3:], start=max(1, len(lines) - 2)):
             try:
                 record = json.loads(line)
                 assert "timestamp" in record

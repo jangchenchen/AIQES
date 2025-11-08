@@ -4,9 +4,9 @@
 测试移动端 Tab 导航、粘贴入口等功能
 """
 
-import requests
 import re
 
+import requests
 
 BASE_URL = "http://localhost:5001"
 
@@ -40,12 +40,12 @@ def test_paste_helper_exists():
     html = response.text
 
     # 检查粘贴帮助链接
-    assert 'form-helper__link' in html, "粘贴帮助链接不存在"
-    assert '查看示例' in html, "查看示例文本不存在"
+    assert "form-helper__link" in html, "粘贴帮助链接不存在"
+    assert "查看示例" in html, "查看示例文本不存在"
     print("✓ 粘贴帮助链接存在")
 
     # 检查示例模板
-    assert 'knowledge-example-template' in html, "示例模板不存在"
+    assert "knowledge-example-template" in html, "示例模板不存在"
     print("✓ 知识示例模板存在")
 
 
@@ -54,7 +54,7 @@ def test_ai_config_container():
     response = requests.get(f"{BASE_URL}/mobile.html")
     html = response.text
 
-    assert 'mobile-ai-config-container' in html, "移动端 AI 配置容器不存在"
+    assert "mobile-ai-config-container" in html, "移动端 AI 配置容器不存在"
     print("✓ 移动端 AI 配置容器存在")
 
 
@@ -113,5 +113,6 @@ def run_all_tests():
 
 if __name__ == "__main__":
     import sys
+
     success = run_all_tests()
     sys.exit(0 if success else 1)

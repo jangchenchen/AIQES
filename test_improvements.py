@@ -19,7 +19,9 @@ def test_redundant_code_fix():
 
     print("\n✅ 检查结果：")
     # 检查是否还有冗余的三元表达式
-    has_redundant = any("2 if len(sentences) >= 2 else 1" in line for line in lines[85:95])
+    has_redundant = any(
+        "2 if len(sentences) >= 2 else 1" in line for line in lines[85:95]
+    )
 
     if has_redundant:
         print("❌ 仍存在冗余代码")
@@ -33,7 +35,12 @@ def test_ai_client_enhancements():
     """验证 AI 客户端增强功能"""
     print("\n=== 验证 AI 客户端增强 ===\n")
 
-    from src.ai_client import AIClient, AIConfig, AITransportError, AIResponseFormatError
+    from src.ai_client import (
+        AIClient,
+        AIConfig,
+        AITransportError,
+        AIResponseFormatError,
+    )
 
     print("✓ 成功导入 AIClient")
     print("✓ 成功导入自定义异常：AITransportError, AIResponseFormatError")

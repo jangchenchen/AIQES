@@ -12,7 +12,10 @@ def test_txt_file_loading():
     print("=== 测试 TXT 文件加载 ===")
 
     result = run(
-        ["python", "-c", """
+        [
+            "python",
+            "-c",
+            """
 from pathlib import Path
 from src.knowledge_loader import load_knowledge_entries
 
@@ -21,7 +24,8 @@ print(f'✓ 加载了 {len(entries)} 个条目')
 assert len(entries) == 2, f'期望2个条目，实际{len(entries)}'
 assert entries[0].component == '称重装置在超载时的要求：'
 print('✓ 条目内容正确')
-        """],
+        """,
+        ],
         capture_output=True,
         text=True,
     )
@@ -39,7 +43,10 @@ def test_md_file_loading():
     print("\n=== 测试 MD 文件加载 ===")
 
     result = run(
-        ["python", "-c", """
+        [
+            "python",
+            "-c",
+            """
 from pathlib import Path
 from src.knowledge_loader import load_knowledge_entries
 
@@ -47,7 +54,8 @@ entries = load_knowledge_entries(Path('docs/Knowledge/电梯安全装置维护�
 print(f'✓ 加载了 {len(entries)} 个条目')
 assert len(entries) >= 7, f'期望至少7个条目，实际{len(entries)}'
 print('✓ Markdown 表格解析正常')
-        """],
+        """,
+        ],
         capture_output=True,
         text=True,
     )
@@ -65,7 +73,7 @@ def test_file_size_limit():
     print("\n=== 测试文件大小限制 ===")
 
     # 创建一个超大文件
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         # 写入 1MB 的数据（超过 700KB 限制）
         content = "测试内容\n" * 100000
         f.write(content)
@@ -73,7 +81,10 @@ def test_file_size_limit():
 
     try:
         result = run(
-            ["python", "-c", f"""
+            [
+                "python",
+                "-c",
+                f"""
 from pathlib import Path
 from src.knowledge_loader import load_knowledge_entries
 
@@ -86,7 +97,8 @@ except ValueError as e:
         print(f'✓ 错误消息：{{str(e)[:60]}}...')
     else:
         print(f'❌ 错误类型不正确：{{e}}')
-            """],
+            """,
+            ],
             capture_output=True,
             text=True,
         )
@@ -136,7 +148,11 @@ def test_cli_parameter():
         # 检查帮助信息
         if ".md/.txt/.pdf" in result.stdout:
             print("✓ 帮助信息包含支持的文件格式")
-        if "683KB" in result.stdout or "700KB" in result.stdout or "<=" in result.stdout:
+        if (
+            "683KB" in result.stdout
+            or "700KB" in result.stdout
+            or "<=" in result.stdout
+        ):
             print("✓ 帮助信息包含文件大小限制")
 
         return True
@@ -151,9 +167,16 @@ def test_custom_file_in_cli():
 
     # 测试 MD 文件
     result = run(
-        ["python", "main.py", "--knowledge-file",
-         "docs/Knowledge/电梯安全装置维护程序.md",
-         "--types", "single", "--count", "1"],
+        [
+            "python",
+            "main.py",
+            "--knowledge-file",
+            "docs/Knowledge/电梯安全装置维护程序.md",
+            "--types",
+            "single",
+            "--count",
+            "1",
+        ],
         input="A\n",
         capture_output=True,
         text=True,
@@ -166,9 +189,16 @@ def test_custom_file_in_cli():
 
     # 测试 TXT 文件
     result = run(
-        ["python", "main.py", "--knowledge-file",
-         "docs/sample_knowledge.txt",
-         "--types", "single", "--count", "1"],
+        [
+            "python",
+            "main.py",
+            "--knowledge-file",
+            "docs/sample_knowledge.txt",
+            "--types",
+            "single",
+            "--count",
+            "1",
+        ],
         input="A\n",
         capture_output=True,
         text=True,
@@ -191,9 +221,16 @@ def test_session_context_recording():
 
     # 先答一题
     result = run(
-        ["python", "main.py", "--knowledge-file",
-         "docs/Knowledge/电梯安全装置维护程序.md",
-         "--types", "single", "--count", "1"],
+        [
+            "python",
+            "main.py",
+            "--knowledge-file",
+            "docs/Knowledge/电梯安全装置维护程序.md",
+            "--types",
+            "single",
+            "--count",
+            "1",
+        ],
         input="A\n",
         capture_output=True,
         text=True,
@@ -203,6 +240,7 @@ def test_session_context_recording():
     history_file = Path("data/answer_history.jsonl")
     if history_file.exists():
         import json
+
         lines = history_file.read_text().split("\n")
         last_record = None
         for line in reversed(lines):

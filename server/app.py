@@ -6,8 +6,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from manage_ai_config import (AIConfig, delete_config, load_config,
-                              normalize_url, save_config, test_connectivity)
+from manage_ai_config import (
+    AIConfig,
+    delete_config,
+    load_config,
+    normalize_url,
+    save_config,
+    test_connectivity,
+)
 
 app = FastAPI(title="AI 配置服务", version="0.1.0")
 

@@ -159,6 +159,7 @@ def test_edge_cases():
     # 测试空知识库
     print("测试空条目...")
     from src.knowledge_loader import KnowledgeEntry
+
     empty_entries = [KnowledgeEntry(component="测试", raw_text="", sentences=[])]
     generator = QuestionGenerator(empty_entries, seed=42)
 
@@ -167,11 +168,13 @@ def test_edge_cases():
 
     # 测试单个句子的条目
     print("测试单句条目...")
-    single_sentence = [KnowledgeEntry(
-        component="单句测试",
-        raw_text="这是一个测试句子。",
-        sentences=["这是一个测试句子。"]
-    )]
+    single_sentence = [
+        KnowledgeEntry(
+            component="单句测试",
+            raw_text="这是一个测试句子。",
+            sentences=["这是一个测试句子。"],
+        )
+    ]
     generator = QuestionGenerator(single_sentence, seed=42)
     questions = generator.build_question_bank()
     print(f"✓ 单句条目生成了 {len(questions)} 个题目")

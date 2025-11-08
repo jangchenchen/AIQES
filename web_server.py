@@ -14,8 +14,7 @@ from manage_ai_config import AIConfig, delete_config
 from manage_ai_config import load_config as load_ai_config
 from manage_ai_config import save_config, test_connectivity
 from src.ai_client import AIClient, AIResponseFormatError, AITransportError
-from src.knowledge_loader import (MAX_KNOWLEDGE_FILE_SIZE,
-                                  load_knowledge_entries)
+from src.knowledge_loader import MAX_KNOWLEDGE_FILE_SIZE, load_knowledge_entries
 from src.question_generator import QuestionGenerator
 from src.question_models import Question, QuestionType
 from src.record_manager import RecordManager

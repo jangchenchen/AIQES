@@ -7,10 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
-from src.ai_client import (AIClient, AIResponseFormatError, AITransportError,
-                           load_ai_config)
-from src.knowledge_loader import (MAX_KNOWLEDGE_FILE_SIZE,
-                                  load_knowledge_entries)
+from src.ai_client import (
+    AIClient,
+    AIResponseFormatError,
+    AITransportError,
+    load_ai_config,
+)
+from src.knowledge_loader import MAX_KNOWLEDGE_FILE_SIZE, load_knowledge_entries
 from src.question_generator import QuestionGenerator
 from src.question_models import Question, QuestionType
 from src.record_manager import RecordManager

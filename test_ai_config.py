@@ -78,12 +78,19 @@ def test_set_command():
         # 设置测试配置
         result = run(
             [
-                "python", "manage_ai_config.py", "set",
-                "--url", "https://api.test.com/v1",
-                "--key", "test-key-12345",
-                "--model", "test-model",
-                "--dev-document", "https://docs.test.com",
-                "--timeout", "15",
+                "python",
+                "manage_ai_config.py",
+                "set",
+                "--url",
+                "https://api.test.com/v1",
+                "--key",
+                "test-key-12345",
+                "--model",
+                "test-model",
+                "--dev-document",
+                "https://docs.test.com",
+                "--timeout",
+                "15",
             ],
             capture_output=True,
             text=True,
@@ -218,7 +225,10 @@ def test_config_data_class():
     print("\n=== 测试 AIConfig 数据类 ===")
 
     result = run(
-        ["python", "-c", """
+        [
+            "python",
+            "-c",
+            """
 from manage_ai_config import AIConfig
 
 # 测试创建
@@ -250,7 +260,8 @@ print("✓ from_payload() 正常工作")
 config3 = AIConfig(key="k", url="u", model="m")
 assert config3.timeout == 10.0  # DEFAULT_TIMEOUT
 print("✓ 默认超时值正确")
-        """],
+        """,
+        ],
         capture_output=True,
         text=True,
     )
@@ -268,7 +279,10 @@ def test_config_file_operations():
     print("\n=== 测试配置文件读写 ===")
 
     result = run(
-        ["python", "-c", """
+        [
+            "python",
+            "-c",
+            """
 import tempfile
 from pathlib import Path
 from manage_ai_config import AIConfig, load_config, save_config
@@ -302,7 +316,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     missing = load_config(Path(tmpdir) / "nonexistent.json")
     assert missing is None, "应该返回 None"
     print("✓ 不存在的文件正确返回 None")
-        """],
+        """,
+        ],
         capture_output=True,
         text=True,
     )
@@ -321,7 +336,10 @@ def test_integration_with_main():
 
     # 检查 main.py 是否能读取配置
     result = run(
-        ["python", "-c", """
+        [
+            "python",
+            "-c",
+            """
 import sys
 from pathlib import Path
 
@@ -343,7 +361,8 @@ except ImportError as e:
     print(f"⚠️  导入失败：{e}")
 except Exception as e:
     print(f"❌ 集成测试异常：{e}")
-        """],
+        """,
+        ],
         capture_output=True,
         text=True,
     )
@@ -363,9 +382,14 @@ def test_frontend_ai_config_ui():
     desktop_html = Path("frontend/index.html").read_text(encoding="utf-8")
     desktop_checks = {
         "AI 配置弹窗": "AI 配置" in desktop_html or "AI配置" in desktop_html,
-        "URL 输入框": 'type="url"' in desktop_html or 'name="ai-url"' in desktop_html or 'id="ai-url"' in desktop_html,
-        "Key 输入框": 'type="password"' in desktop_html or 'name="ai-key"' in desktop_html or 'id="ai-key"' in desktop_html,
-        "模型输入框": 'name="ai-model"' in desktop_html or 'id="ai-model"' in desktop_html,
+        "URL 输入框": 'type="url"' in desktop_html
+        or 'name="ai-url"' in desktop_html
+        or 'id="ai-url"' in desktop_html,
+        "Key 输入框": 'type="password"' in desktop_html
+        or 'name="ai-key"' in desktop_html
+        or 'id="ai-key"' in desktop_html,
+        "模型输入框": 'name="ai-model"' in desktop_html
+        or 'id="ai-model"' in desktop_html,
         "测试连通性按钮": "测试" in desktop_html and "连通" in desktop_html,
         "保存按钮": "保存" in desktop_html,
         "删除按钮": "删除" in desktop_html,
@@ -382,7 +406,9 @@ def test_frontend_ai_config_ui():
     # 检查移动端
     mobile_html = Path("frontend/mobile.html").read_text(encoding="utf-8")
     mobile_checks = {
-        "配置抽屉": "抽屉" in mobile_html or "drawer" in mobile_html or "AI配置" in mobile_html,
+        "配置抽屉": "抽屉" in mobile_html
+        or "drawer" in mobile_html
+        or "AI配置" in mobile_html,
         "配置表单": "<form" in mobile_html or "ai-url" in mobile_html,
         "测试/保存按钮": "测试" in mobile_html and "保存" in mobile_html,
     }
@@ -398,7 +424,9 @@ def test_frontend_ai_config_ui():
     total_checks = len(desktop_checks) + len(mobile_checks)
     total_passed = desktop_passed + mobile_passed
 
-    print(f"\n前端界面检查通过率：{total_passed}/{total_checks} ({100*total_passed//total_checks}%)")
+    print(
+        f"\n前端界面检查通过率：{total_passed}/{total_checks} ({100*total_passed//total_checks}%)"
+    )
 
     return total_passed >= total_checks * 0.7  # 70% 通过即可
 
@@ -428,6 +456,7 @@ def main():
         except Exception as e:
             print(f"\n❌ {name} 测试异常：{e}")
             import traceback
+
             traceback.print_exc()
             results[name] = False
 

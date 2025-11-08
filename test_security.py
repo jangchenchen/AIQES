@@ -237,6 +237,7 @@ def run_all_tests():
         print(f"❌ 测试失败: {e}")
         print("=" * 60)
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -245,6 +246,7 @@ def run_all_tests():
         print(f"❌ 测试异常: {e}")
         print("=" * 60)
         import traceback
+
         traceback.print_exc()
         return 1
 
