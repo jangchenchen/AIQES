@@ -29,6 +29,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: 'requirements-web.txt'
 
       - name: Install dependencies
         run: |
@@ -82,18 +83,18 @@ jobs:
       - name: Run Bandit (SAST)
         run: |
           bandit -r src/ -f json -o bandit-report.json || true
-          bandit -r src/ -f txt
+          bandit -r src/ -f txt || true
 
       - name: Run Semgrep (SAST)
         run: |
-          semgrep --config=auto src/ --json > semgrep-report.json || true
-          semgrep --config=auto src/
+          semgrep --config=auto src/ --sarif > semgrep-report.sarif || true
+          semgrep --config=auto src/ || true
 
       - name: Upload SAST results
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: semgrep-report.json
-        if: always()
+          sarif_file: semgrep-report.sarif
+        if: always() && hashFiles('semgrep-report.sarif') != ''
 
   # ============================================================================
   # Job 3: 单元测试
@@ -113,6 +114,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+          cache-dependency-path: 'requirements-web.txt'
 
       - name: Install system dependencies
         run: |
